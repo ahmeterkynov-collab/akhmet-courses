@@ -90,7 +90,7 @@
     </div>
   </div>
 
-  <!-- Модалка Управления Учениками С ПОИСКОМ (Админ) -->
+  <!-- Модалка Управления Учениками (Админ) -->
   <div id="students-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
     <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-2xl w-full p-6 shadow-2xl max-h-[85vh] flex flex-col">
       <div class="flex justify-between items-center mb-4">
@@ -99,7 +99,6 @@
         </h3>
         <button onclick="closeStudentsModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
       </div>
-      <!-- Поисковая строка -->
       <div class="mb-4">
         <div class="relative">
           <i class="fa-solid fa-magnifying-glass absolute left-3 top-3 text-slate-500 text-xs"></i>
@@ -506,7 +505,6 @@
 
       if (courses && courses.length > 0) {
         for (let c of courses) {
-          // Вычисляем процент прохождения курса для ученика
           const { data: courseLessons } = await supabaseClient.from('lessons').select('id').eq('course_id', c.id);
           let progressPercent = 0;
           if (courseLessons && courseLessons.length > 0) {
@@ -523,7 +521,6 @@
                 <h3 class="text-base sm:text-lg font-bold text-white">${c.title}</h3>
                 <p class="text-xs text-slate-400 mt-2 line-clamp-2">${c.description || ''}</p>
 
-                <!-- Шкала прогресса -->
                 ${userRole !== 'admin' ? `
                   <div class="mt-4">
                     <div class="flex justify-between text-[11px] font-semibold mb-1">
@@ -572,34 +569,24 @@
       const { data: lessons } = await supabaseClient.from('lessons').select('*').eq('course_id', courseId).order('position', { ascending: true });
       currentCourseLessons = lessons || [];
 
-      let html = `
-        <div class="flex justify-between items-center mb-6">
-          <button onclick="renderCoursesView()" class="text-xs sm:text-sm text-slate-400 hover:text-white inline-flex items-center gap-2">
-            ${i18n[currentLang].backToCourses}
-          </button>
-          ${userRole === 'admin' ? `
-            <button onclick="addLessonPrompt('${courseId}')" class="bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold px-3 py-2 rounded-lg flex items-center gap-2">
-              <i class="fa-solid fa-plus"></i> ${i18n[currentLang].addLesson}
-            </button>
-          ` : ''}
-        </div>
-      `;
-
       if (!lessons || lessons.length === 0) {
-        html += `<div class="text-center py-12 text-slate-500">${i18n[currentLang].noLessons}</div>`;
-        container.innerHTML = html;
+        container.innerHTML = `
+          <div class="flex justify-between items-center mb-6">
+            <button onclick="renderCoursesView()" class="text-xs sm:text-sm text-slate-400 hover:text-white inline-flex items-center gap-2">${i18n[currentLang].backToCourses}</button>
+            ${userRole === 'admin' ? `<button onclick="addLessonPrompt('${courseId}')" class="bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold px-3 py-2 rounded-lg flex items-center gap-2"><i class="fa-solid fa-plus"></i> ${i18n[currentLang].addLesson}</button>` : ''}
+          </div>
+          <div class="text-center py-12 text-slate-500">${i18n[currentLang].noLessons}</div>
+        `;
         return;
       }
 
-      const activeLesson = lessons[0];
-      renderLessonDetailsView(activeLesson, courseId, container);
+      renderLessonDetailsView(lessons[0], courseId, container);
     }
 
     function renderLessonDetailsView(activeLesson, courseId, container) {
       const embedUrl = getEmbedUrl(activeLesson.video_url);
       const isCompleted = !!userProgressMap[activeLesson.id];
 
-      // Материалы к уроку
       let attachmentsList = activeLesson.attachments || [];
       if (typeof attachmentsList === 'string') {
         try { attachmentsList = JSON.parse(attachmentsList); } catch(e) { attachmentsList = []; }
@@ -619,13 +606,13 @@
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
           <div class="lg:col-span-2 space-y-6">
-            <!-- Видеоплеер -->
+            <!-- Плеер -->
             <div class="bg-black rounded-2xl overflow-hidden aspect-video border border-slate-800 shadow-2xl relative">
               ${embedUrl ? `<iframe src="${embedUrl}" class="w-full h-full" allowfullscreen allow="autoplay"></iframe>` : 
                 `<video src="${activeLesson.video_url}" controls class="w-full h-full"></video>`}
             </div>
 
-            <!-- Инфо об уроке + Кнопка Отметки прохождения -->
+            <!-- Урок инфо -->
             <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-4">
               <div class="flex flex-wrap items-center justify-between gap-3">
                 <h2 class="text-lg sm:text-xl font-bold text-white">${activeLesson.title}</h2>
@@ -637,7 +624,7 @@
               <p class="text-xs sm:text-sm text-slate-400 leading-relaxed">${activeLesson.description || ''}</p>
             </div>
 
-            <!-- Скачиваемые материалы (PDF / Excel / Шаблоны) -->
+            <!-- Скачиваемые материалы -->
             ${attachmentsList.length > 0 ? `
               <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5">
                 <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-2">
@@ -659,23 +646,36 @@
               </div>
             ` : ''}
 
-            <!-- Домашка / Отправка заданий -->
+            <!-- Домашка: Текст + Загрузка файла в Supabase Storage / Ссылка -->
             <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5">
               <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-2">
                 <i class="fa-solid fa-pen-to-square text-indigo-400"></i> Домашнее задание
               </h3>
               <form onsubmit="submitHomework(event, '${activeLesson.id}')" class="space-y-3">
                 <textarea id="hw-text" rows="3" placeholder="Введите ваш ответ или решение..." class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs sm:text-sm text-white focus:outline-none focus:border-blue-500"></textarea>
-                <input type="url" id="hw-file-url" placeholder="Ссылка на файл (Google Drive / Яндекс Диск / Файл)..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500">
+
+                <!-- Выбор файла с устройства -->
+                <div>
+                  <label class="block text-[11px] text-slate-400 mb-1">Прикрепить файл (Excel, PDF, фото, документ):</label>
+                  <input type="file" id="hw-file-input" class="w-full text-xs text-slate-400 file:mr-3 file:py-2 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-slate-800 file:text-blue-400 hover:file:bg-slate-700 cursor-pointer">
+                </div>
+
+                <!-- Дополнительное поле для ссылки -->
+                <div>
+                  <label class="block text-[11px] text-slate-400 mb-1">Или ссылка на файл (Google Drive / Яндекс Диск):</label>
+                  <input type="url" id="hw-file-url" placeholder="https://..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500">
+                </div>
+
                 <div id="hw-msg" class="text-xs hidden p-2.5 rounded-lg"></div>
-                <button type="submit" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold px-4 py-2.5 rounded-xl transition">
-                  Отправить решение
+
+                <button type="submit" id="hw-submit-btn" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold px-4 py-2.5 rounded-xl transition flex items-center gap-2">
+                  <i class="fa-solid fa-paper-plane"></i> <span>Отправить решение</span>
                 </button>
               </form>
             </div>
           </div>
 
-          <!-- Список уроков с галочками -->
+          <!-- Список уроков -->
           <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 h-fit">
             <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4 px-2">Список уроков</h3>
             <div class="space-y-2">
@@ -730,14 +730,52 @@
       switchActiveLesson(lessonId, courseId);
     }
 
+    // Обработчик отправки Домашки с загрузкой файла
     async function submitHomework(e, lessonId) {
       e.preventDefault();
       const text = document.getElementById('hw-text').value.trim();
-      const fileUrl = document.getElementById('hw-file-url').value.trim();
+      const fileInput = document.getElementById('hw-file-input');
+      let fileUrl = document.getElementById('hw-file-url').value.trim();
       const msg = document.getElementById('hw-msg');
+      const submitBtn = document.getElementById('hw-submit-btn');
 
-      if (!text && !fileUrl) return;
+      if (!text && !fileUrl && (!fileInput.files || fileInput.files.length === 0)) return;
 
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> <span>Загрузка...</span>`;
+      msg.classList.add('hidden');
+
+      // Если выбран файл с устройства — загружаем в Supabase Storage
+      if (fileInput.files && fileInput.files.length > 0) {
+        const file = fileInput.files[0];
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${currentUser.id}_${Date.now()}.${fileExt}`;
+        const filePath = `submissions/${fileName}`;
+
+        const { data, error: uploadErr } = await supabaseClient
+          .storage
+          .from('homeworks')
+          .upload(filePath, file);
+
+        if (uploadErr) {
+          msg.classList.remove('hidden');
+          msg.className = "text-xs p-2.5 rounded-lg bg-red-950/50 text-red-400 border border-red-900/50";
+          msg.innerText = "Ошибка загрузки файла: " + uploadErr.message;
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = `<i class="fa-solid fa-paper-plane"></i> <span>Отправить решение</span>`;
+          return;
+        }
+
+        // Получаем публичную ссылку на загруженный файл
+        const { data: publicUrlData } = supabaseClient
+          .storage
+          .from('homeworks')
+          .getPublicUrl(filePath);
+
+        fileUrl = publicUrlData.publicUrl;
+      }
+
+      // Сохраняем решение в базу
       const { error } = await supabaseClient.from('homework_submissions').insert([{
         user_id: currentUser.id,
         lesson_id: lessonId,
@@ -746,26 +784,19 @@
         file_url: fileUrl
       }]);
 
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = `<i class="fa-solid fa-paper-plane"></i> <span>Отправить решение</span>`;
       msg.classList.remove('hidden');
+
       if (error) {
         msg.className = "text-xs p-2.5 rounded-lg bg-red-950/50 text-red-400 border border-red-900/50";
-        msg.innerText = "Ошибка отправки: " + error.message;
+        msg.innerText = "Ошибка сохранения: " + error.message;
       } else {
         msg.className = "text-xs p-2.5 rounded-lg bg-green-950/50 text-green-400 border border-green-900/50";
-        msg.innerText = "Решение успешно отправлено преподавателю!";
+        msg.innerText = "Решение и файл успешно отправлены преподавателю!";
         document.getElementById('hw-text').value = '';
         document.getElementById('hw-file-url').value = '';
-      }
-    }
-
-    function playLesson(lessonId) {
-      const lesson = currentCourseLessons.find(l => l.id === lessonId);
-      if (!lesson) return;
-
-      const embedUrl = getEmbedUrl(lesson.video_url);
-      const playerBox = document.querySelector('.aspect-video');
-      if (playerBox) {
-        playerBox.innerHTML = embedUrl ? `<iframe src="${embedUrl}" class="w-full h-full" allowfullscreen allow="autoplay"></iframe>` : `<video src="${lesson.video_url}" controls class="w-full h-full"></video>`;
+        fileInput.value = '';
       }
     }
 
@@ -779,7 +810,6 @@
       return null;
     }
 
-    // Редактирование курса (Админ)
     async function editCoursePrompt(courseId) {
       const course = currentCoursesList.find(c => c.id === courseId);
       if (!course) return;
@@ -811,7 +841,6 @@
       }
     }
 
-    // Управление учениками с поиском (Админ)
     async function openStudentsModal() {
       const list = document.getElementById('students-list-container');
       list.innerHTML = `<div class="text-center py-6 text-slate-500"><i class="fa-solid fa-spinner fa-spin text-xl"></i></div>`;
@@ -861,9 +890,7 @@
       `).join('');
     }
 
-    function closeStudentsModal() {
-      document.getElementById('students-modal').classList.add('hidden');
-    }
+    function closeStudentsModal() { document.getElementById('students-modal').classList.add('hidden'); }
 
     async function toggleStudentAccess(studentId, newStatus) {
       await supabaseClient.from('profiles').update({ is_active: newStatus }).eq('id', studentId);
@@ -877,7 +904,7 @@
       if (!video_url) return;
       const description = prompt("Описание урока:");
       
-      const file_name = prompt("Название скачиваемого файла (необязательно, напр: Таблица Excel):");
+      const file_name = prompt("Название скачиваемого файла (необязательно):");
       const file_url = file_name ? prompt("Ссылка на скачиваемый файл (Google Drive / PDF / Excel):") : null;
       
       const attachments = (file_name && file_url) ? [{ name: file_name, url: file_url }] : [];

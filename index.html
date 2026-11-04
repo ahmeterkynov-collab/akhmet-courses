@@ -11,7 +11,7 @@
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
     body { font-family: 'Inter', sans-serif; }
     .glassmorphism {
-      background: rgba(15, 23, 42, 0.85);
+      background: rgba(15, 23, 42, 0.90);
       backdrop-filter: blur(12px);
       border-bottom: 1px solid rgba(255, 255, 255, 0.08);
     }
@@ -19,39 +19,41 @@
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col">
 
-  <!-- Шапка сайта -->
+  <!-- Адаптивная шапка -->
   <header class="glassmorphism sticky top-0 z-50">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-      <div class="flex items-center space-x-3 cursor-pointer" onclick="handleLogoClick()">
-        <!-- Постоянный логотип бренда -->
-        <img id="brand-logo-img" src="https://p16-common-sign.tiktokcdn.com/tos-useast2a-avt-0068-euttp/6886f3ee61cf6662f1b894a66006e428~tplv-tiktokx-cropcenter:1080:1080.jpeg?dr=14579&refresh_token=9f2876a5&x-expires=1793988000&x-signature=XG44myIc7lHN9UYmLIEmy%2BKKWsE%3D&t=4d5b0474&ps=13740610&shp=a5d48078&shcp=81f88b70&idc=my2" onerror="this.onerror=null; this.src='https://api.dicebear.com/7.x/bottts/svg?seed=Ahmet';" alt="Ахмет" class="w-10 h-10 rounded-xl object-cover border border-blue-500/40 shadow-md shadow-blue-500/20">
-        <div>
-          <span class="text-base sm:text-lg font-bold text-white leading-tight block">Ахметтен пайдалы ақпарат</span>
-          <span class="block text-[11px] text-blue-400 font-medium" id="lang-subtitle">Оқыту платформасы</span>
+    <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-2 sm:py-3 flex flex-wrap items-center justify-between gap-2">
+      
+      <!-- Логотип и Бренд -->
+      <div class="flex items-center space-x-2.5 cursor-pointer min-w-0" onclick="handleLogoClick()">
+        <img id="brand-logo-img" src="https://p16-common-sign.tiktokcdn.com/tos-useast2a-avt-0068-euttp/6886f3ee61cf6662f1b894a66006e428~tplv-tiktokx-cropcenter:1080:1080.jpeg?dr=14579&refresh_token=9f2876a5&x-expires=1793988000&x-signature=XG44myIc7lHN9UYmLIEmy%2BKKWsE%3D&t=4d5b0474&ps=13740610&shp=a5d48078&shcp=81f88b70&idc=my2" onerror="this.onerror=null; this.src='https://api.dicebear.com/7.x/bottts/svg?seed=Ahmet';" alt="Ахмет" class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl object-cover border border-blue-500/40 shadow-md shadow-blue-500/20 flex-shrink-0">
+        <div class="min-w-0">
+          <span class="text-sm sm:text-base font-bold text-white leading-tight block truncate">Ахметтен пайдалы ақпарат</span>
+          <span class="block text-[10px] sm:text-[11px] text-blue-400 font-medium truncate" id="lang-subtitle">Оқыту платформасы</span>
         </div>
       </div>
 
-      <div class="flex items-center space-x-4">
-        <!-- Переключатель языка -->
-        <div class="bg-slate-900 border border-slate-800 rounded-lg p-1 flex items-center text-xs font-semibold">
-          <button onclick="setLanguage('ru')" id="lang-btn-ru" class="px-2.5 py-1 rounded-md transition-all">RU</button>
-          <button onclick="setLanguage('kk')" id="lang-btn-kk" class="px-2.5 py-1 rounded-md transition-all">KK</button>
+      <!-- Правый блок: Языки + Настройки + Профиль -->
+      <div class="flex items-center space-x-2 sm:space-x-3 ml-auto">
+        <!-- Языки -->
+        <div class="bg-slate-900 border border-slate-800 rounded-lg p-0.5 sm:p-1 flex items-center text-[11px] sm:text-xs font-semibold">
+          <button onclick="setLanguage('ru')" id="lang-btn-ru" class="px-2 py-0.5 sm:py-1 rounded-md transition-all">RU</button>
+          <button onclick="setLanguage('kk')" id="lang-btn-kk" class="px-2 py-0.5 sm:py-1 rounded-md transition-all">KK</button>
         </div>
 
-        <!-- Кнопка настройки БД (Скрыта от учеников) -->
-        <button id="db-config-btn" onclick="openConfigModal()" class="hidden p-2 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition" title="Настройки Supabase">
-          <i class="fa-solid fa-database"></i>
+        <!-- Настройка БД (Только админ) -->
+        <button id="db-config-btn" onclick="openConfigModal()" class="hidden p-1.5 sm:p-2 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition" title="Настройки">
+          <i class="fa-solid fa-database text-xs sm:text-sm"></i>
         </button>
 
-        <!-- Профиль пользователя -->
-        <div id="user-menu" class="hidden flex items-center space-x-3 border-l border-slate-800 pl-4">
-          <button onclick="openProfileModal()" class="flex items-center space-x-2 hover:opacity-80 transition">
-            <div class="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-sm" id="user-avatar">A</div>
-            <span class="text-sm font-medium text-slate-300" id="user-name">Пользователь</span>
-            <span id="user-role-badge" class="text-[10px] px-2 py-0.5 rounded-full font-bold uppercase bg-slate-800 text-slate-400 border border-slate-700">Ученик</span>
+        <!-- Меню профиля -->
+        <div id="user-menu" class="hidden flex items-center space-x-2 border-l border-slate-800 pl-2 sm:pl-3">
+          <button onclick="openProfileModal()" class="flex items-center space-x-1.5 hover:opacity-80 transition max-w-[120px] sm:max-w-none">
+            <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-xs sm:text-sm flex-shrink-0" id="user-avatar">A</div>
+            <span class="text-xs sm:text-sm font-medium text-slate-300 truncate hidden sm:inline" id="user-name">Пользователь</span>
+            <span id="user-role-badge" class="text-[9px] sm:text-[10px] px-1.5 py-0.5 rounded-full font-bold uppercase bg-slate-800 text-slate-400 border border-slate-700">Ученик</span>
           </button>
-          <button onclick="logout()" class="p-2 text-slate-400 hover:text-red-400 rounded-lg hover:bg-slate-800 transition" title="Выйти">
-            <i class="fa-solid fa-right-from-bracket"></i>
+          <button onclick="logout()" class="p-1.5 sm:p-2 text-slate-400 hover:text-red-400 rounded-lg hover:bg-slate-800 transition" title="Выйти">
+            <i class="fa-solid fa-right-from-bracket text-xs sm:text-sm"></i>
           </button>
         </div>
       </div>
@@ -59,7 +61,7 @@
   </header>
 
   <!-- Главный контейнер -->
-  <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8" id="app-content">
+  <main class="flex-grow max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 py-6" id="app-content">
   </main>
 
   <!-- Модалка Профиля -->
@@ -88,6 +90,21 @@
     </div>
   </div>
 
+  <!-- Модалка Управления Учениками (Только Админ) -->
+  <div id="students-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-2xl w-full p-6 shadow-2xl max-h-[85vh] flex flex-col">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="text-lg font-bold text-white flex items-center gap-2">
+          <i class="fa-solid fa-users text-blue-500"></i> <span>Управление доступами учеников</span>
+        </h3>
+        <button onclick="closeStudentsModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="overflow-y-auto flex-grow space-y-3 pr-1" id="students-list-container">
+        <!-- Список учеников загружается динамически -->
+      </div>
+    </div>
+  </div>
+
   <!-- Модалка Настроек БД -->
   <div id="config-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
     <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl">
@@ -95,11 +112,11 @@
       <div class="space-y-4">
         <div>
           <label class="block text-xs text-slate-300 mb-1">Project URL</label>
-          <input type="text" id="supabase-url" placeholder="https://xyz.supabase.co" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-white">
+          <input type="text" id="supabase-url" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-white">
         </div>
         <div>
           <label class="block text-xs text-slate-300 mb-1">Anon / Public Key</label>
-          <textarea id="supabase-key" rows="3" placeholder="eyJhbGciOi..." class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white font-mono"></textarea>
+          <textarea id="supabase-key" rows="3" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white font-mono"></textarea>
         </div>
       </div>
       <div class="mt-6 flex justify-end gap-3">
@@ -115,7 +132,7 @@
 
     const i18n = {
       ru: {
-        subtitle: "Обучающая платформа",
+        subtitle: "Оқыту платформасы",
         loginTab: "Вход",
         registerTab: "Регистрация",
         emailLabel: "Электронная почта",
@@ -135,6 +152,8 @@
         deleteCourse: "Удалить курс",
         noCourses: "Курсы еще не созданы.",
         noLessons: "В этом курсе пока нет уроков.",
+        noAccessTitle: "Доступ еще не активирован",
+        noAccessText: "Ваш аккаунт успешно зарегистрирован, но доступ к видеоурокам открывается после подтверждения оплаты. Пожалуйста, напишите администратору.",
         noDbWarning: "Ошибка подключения к базе данных."
       },
       kk: {
@@ -158,6 +177,8 @@
         deleteCourse: "Курсты жою",
         noCourses: "Курстар әлі жасалмаған.",
         noLessons: "Бұл курста әлі сабақтар жоқ.",
+        noAccessTitle: "Қолжетімділік әлі белсендірілмеген",
+        noAccessText: "Тіркелу сәтті өтті! Сабақтарға рұқсат алу үшін төлемді растау қажет. Әкімшіге хабарласыңыз.",
         noDbWarning: "Дерекқорға қосылу қатесі."
       }
     };
@@ -167,6 +188,7 @@
     let supabaseClient = null;
     let currentUser = null;
     let userRole = 'student';
+    let userIsActive = false;
     let userFullName = '';
     let currentCourseLessons = [];
 
@@ -179,8 +201,8 @@
 
     function updateLanguageUI() {
       document.getElementById('lang-subtitle').innerText = i18n[currentLang].subtitle;
-      document.getElementById('lang-btn-ru').className = currentLang === 'ru' ? 'px-2.5 py-1 rounded-md bg-blue-600 text-white' : 'px-2.5 py-1 rounded-md text-slate-400 hover:text-white';
-      document.getElementById('lang-btn-kk').className = currentLang === 'kk' ? 'px-2.5 py-1 rounded-md bg-blue-600 text-white' : 'px-2.5 py-1 rounded-md text-slate-400 hover:text-white';
+      document.getElementById('lang-btn-ru').className = currentLang === 'ru' ? 'px-2 py-0.5 sm:py-1 rounded-md bg-blue-600 text-white' : 'px-2 py-0.5 sm:py-1 rounded-md text-slate-400 hover:text-white';
+      document.getElementById('lang-btn-kk').className = currentLang === 'kk' ? 'px-2 py-0.5 sm:py-1 rounded-md bg-blue-600 text-white' : 'px-2 py-0.5 sm:py-1 rounded-md text-slate-400 hover:text-white';
       document.getElementById('txt-profile-title').innerText = i18n[currentLang].profileTitle;
       document.getElementById('txt-label-fullname').innerText = i18n[currentLang].fullName;
     }
@@ -193,7 +215,7 @@
     function renderAuthView() {
       const app = document.getElementById('app-content');
       app.innerHTML = `
-        <div class="max-w-md mx-auto mt-8 bg-slate-900 border border-slate-800 rounded-2xl p-8 shadow-2xl">
+        <div class="max-w-md mx-auto mt-4 sm:mt-8 bg-slate-900 border border-slate-800 rounded-2xl p-6 sm:p-8 shadow-2xl">
           <div class="flex border-b border-slate-800 mb-6">
             <button onclick="switchAuthTab('login')" class="w-1/2 py-3 text-sm font-semibold border-b-2 transition ${authTab === 'login' ? 'border-blue-500 text-blue-400' : 'border-transparent text-slate-400 hover:text-white'}">
               ${i18n[currentLang].loginTab}
@@ -255,11 +277,12 @@
           currentUser = session.user;
           const { data: profile } = await supabaseClient
             .from('profiles')
-            .select('role, full_name')
+            .select('role, full_name, is_active')
             .eq('id', currentUser.id)
             .maybeSingle();
 
           userRole = profile?.role || 'student';
+          userIsActive = profile?.is_active ?? (userRole === 'admin');
           userFullName = profile?.full_name || currentUser.email.split('@')[0];
           updateUserMenu(userFullName);
           renderCoursesView();
@@ -285,11 +308,11 @@
         const badge = document.getElementById('user-role-badge');
         if (userRole === 'admin') {
           badge.innerText = i18n[currentLang].adminRole;
-          badge.className = 'text-[10px] px-2 py-0.5 rounded-full font-bold uppercase bg-blue-600/20 text-blue-400 border border-blue-500/40';
+          badge.className = 'text-[9px] sm:text-[10px] px-1.5 py-0.5 rounded-full font-bold uppercase bg-blue-600/20 text-blue-400 border border-blue-500/40';
           if (dbBtn) dbBtn.classList.remove('hidden');
         } else {
           badge.innerText = i18n[currentLang].studentRole;
-          badge.className = 'text-[10px] px-2 py-0.5 rounded-full font-semibold uppercase bg-slate-800 text-slate-400 border border-slate-700';
+          badge.className = 'text-[9px] sm:text-[10px] px-1.5 py-0.5 rounded-full font-semibold uppercase bg-slate-800 text-slate-400 border border-slate-700';
           if (dbBtn) dbBtn.classList.add('hidden');
         }
       } else {
@@ -336,6 +359,7 @@
         return;
       }
 
+      // Новый ученик регистрируется с is_active = false
       const { data, error } = await supabaseClient.auth.signUp({
         email,
         password,
@@ -348,6 +372,16 @@
         errorBox.innerText = error.message;
         errorBox.classList.remove('hidden');
       } else {
+        // Создаем профиль в БД со статусом is_active = false
+        if (data.user) {
+          await supabaseClient.from('profiles').upsert({
+            id: data.user.id,
+            email: email,
+            full_name: name,
+            role: 'student',
+            is_active: false
+          });
+        }
         successBox.innerText = "Успешно! Входим в систему...";
         successBox.classList.remove('hidden');
         setTimeout(() => checkAuthStatus(), 1000);
@@ -356,35 +390,56 @@
 
     async function renderCoursesView() {
       const container = document.getElementById('app-content');
+
+      // Проверка доступа для обычных учеников
+      if (userRole !== 'admin' && !userIsActive) {
+        container.innerHTML = `
+          <div class="max-w-lg mx-auto my-12 bg-slate-900 border border-slate-800 rounded-2xl p-8 text-center shadow-2xl">
+            <div class="w-16 h-16 rounded-full bg-yellow-500/10 border border-yellow-500/30 text-yellow-500 flex items-center justify-center mx-auto mb-4 text-2xl">
+              <i class="fa-solid fa-lock"></i>
+            </div>
+            <h2 class="text-xl font-bold text-white mb-2">${i18n[currentLang].noAccessTitle}</h2>
+            <p class="text-xs sm:text-sm text-slate-400 leading-relaxed">${i18n[currentLang].noAccessText}</p>
+          </div>
+        `;
+        return;
+      }
+
       container.innerHTML = `<div class="text-center py-12 text-slate-500"><i class="fa-solid fa-spinner fa-spin text-2xl"></i></div>`;
 
       const { data: courses } = await supabaseClient.from('courses').select('*').order('created_at', { ascending: false });
 
       let html = `
-        <div class="flex justify-between items-center mb-8">
-          <h1 class="text-2xl font-bold text-white">${userRole === 'admin' ? i18n[currentLang].adminPanel : i18n[currentLang].myCourses}</h1>
+        <div class="flex flex-wrap justify-between items-center gap-3 mb-6 sm:mb-8">
+          <h1 class="text-xl sm:text-2xl font-bold text-white">${userRole === 'admin' ? i18n[currentLang].adminPanel : i18n[currentLang].myCourses}</h1>
+          
           ${userRole === 'admin' ? `
-            <button onclick="createCoursePrompt()" class="bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition flex items-center gap-2">
-              <i class="fa-solid fa-plus"></i> ${i18n[currentLang].createCourse}
-            </button>
+            <div class="flex items-center gap-2">
+              <button onclick="openStudentsModal()" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs sm:text-sm font-semibold px-3 py-2 sm:px-4 sm:py-2.5 rounded-xl transition flex items-center gap-2">
+                <i class="fa-solid fa-users"></i> <span>Ученики</span>
+              </button>
+              <button onclick="createCoursePrompt()" class="bg-blue-600 hover:bg-blue-500 text-white text-xs sm:text-sm font-semibold px-3 py-2 sm:px-4 sm:py-2.5 rounded-xl transition flex items-center gap-2">
+                <i class="fa-solid fa-plus"></i> <span>${i18n[currentLang].createCourse}</span>
+              </button>
+            </div>
           ` : ''}
         </div>
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
       `;
 
       if (courses && courses.length > 0) {
         courses.forEach(c => {
           html += `
-            <div class="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden hover:border-slate-700 transition flex flex-col justify-between p-5 relative group">
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden hover:border-slate-700 transition flex flex-col justify-between p-4 sm:p-5 relative group">
               <div>
                 <div class="h-36 bg-slate-800 rounded-xl mb-4 overflow-hidden relative">
                   <img src="${c.cover_url || 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=800'}" class="w-full h-full object-cover">
                 </div>
-                <h3 class="text-lg font-bold text-white">${c.title}</h3>
+                <h3 class="text-base sm:text-lg font-bold text-white">${c.title}</h3>
                 <p class="text-xs text-slate-400 mt-2 line-clamp-2">${c.description || ''}</p>
               </div>
 
-              <div class="mt-6 pt-4 border-t border-slate-800/80 flex items-center justify-between">
+              <div class="mt-5 pt-4 border-t border-slate-800/80 flex items-center justify-between">
                 <button onclick="openCourse('${c.id}')" class="text-xs font-semibold text-blue-400 hover:text-blue-300 flex items-center gap-1">
                   Смотреть уроки <i class="fa-solid fa-chevron-right text-[10px]"></i>
                 </button>
@@ -406,6 +461,8 @@
     }
 
     async function openCourse(courseId) {
+      if (userRole !== 'admin' && !userIsActive) return;
+
       const container = document.getElementById('app-content');
       container.innerHTML = `<div class="text-center py-12 text-slate-500"><i class="fa-solid fa-spinner fa-spin text-2xl"></i></div>`;
 
@@ -414,7 +471,7 @@
 
       let html = `
         <div class="flex justify-between items-center mb-6">
-          <button onclick="renderCoursesView()" class="text-sm text-slate-400 hover:text-white inline-flex items-center gap-2">
+          <button onclick="renderCoursesView()" class="text-xs sm:text-sm text-slate-400 hover:text-white inline-flex items-center gap-2">
             ${i18n[currentLang].backToCourses}
           </button>
           ${userRole === 'admin' ? `
@@ -435,15 +492,15 @@
       const embedUrl = getEmbedUrl(activeLesson.video_url);
 
       html += `
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
           <div class="lg:col-span-2 space-y-4">
             <div class="bg-black rounded-2xl overflow-hidden aspect-video border border-slate-800 shadow-2xl relative">
               ${embedUrl ? `<iframe src="${embedUrl}" class="w-full h-full" allowfullscreen allow="autoplay"></iframe>` : 
                 `<video src="${activeLesson.video_url}" controls class="w-full h-full"></video>`}
             </div>
-            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6">
-              <h2 class="text-xl font-bold text-white" id="current-lesson-title">${activeLesson.title}</h2>
-              <p class="text-sm text-slate-400 mt-2" id="current-lesson-desc">${activeLesson.description || ''}</p>
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5">
+              <h2 class="text-lg sm:text-xl font-bold text-white" id="current-lesson-title">${activeLesson.title}</h2>
+              <p class="text-xs sm:text-sm text-slate-400 mt-2" id="current-lesson-desc">${activeLesson.description || ''}</p>
             </div>
           </div>
 
@@ -453,7 +510,7 @@
               ${lessons.map((l, idx) => `
                 <div class="p-3 rounded-xl bg-slate-950 border border-slate-800/60 hover:border-blue-500/50 transition flex items-center justify-between group">
                   <div class="cursor-pointer flex-grow mr-2" onclick="playLesson('${l.id}')">
-                    <span class="text-sm font-medium text-slate-200">${idx + 1}. ${l.title}</span>
+                    <span class="text-xs sm:text-sm font-medium text-slate-200">${idx + 1}. ${l.title}</span>
                   </div>
                   <div class="flex items-center space-x-2">
                     <button onclick="playLesson('${l.id}')" class="text-blue-500 hover:text-blue-400 p-1" title="Смотреть">
@@ -463,7 +520,7 @@
                       <button onclick="editLessonPrompt('${l.id}', '${courseId}')" class="text-slate-400 hover:text-yellow-400 p-1" title="Редактировать">
                         <i class="fa-solid fa-pen text-xs"></i>
                       </button>
-                      <button onclick="deleteLesson('${l.id}', '${courseId}')" class="text-slate-400 hover:text-red-400 p-1" title="Удалить урок">
+                      <button onclick="deleteLesson('${l.id}', '${courseId}')" class="text-slate-400 hover:text-red-400 p-1" title="Удалить">
                         <i class="fa-solid fa-trash text-xs"></i>
                       </button>
                     ` : ''}
@@ -500,6 +557,50 @@
       }
       if (url.includes('drive.google.com')) return url.replace(/\/view.*$/, '/preview');
       return null;
+    }
+
+    // Управление Учениками (Админ)
+    async function openStudentsModal() {
+      const list = document.getElementById('students-list-container');
+      list.innerHTML = `<div class="text-center py-6 text-slate-500"><i class="fa-solid fa-spinner fa-spin text-xl"></i></div>`;
+      document.getElementById('students-modal').classList.remove('hidden');
+
+      const { data: students } = await supabaseClient
+        .from('profiles')
+        .select('*')
+        .eq('role', 'student')
+        .order('created_at', { ascending: false });
+
+      if (!students || students.length === 0) {
+        list.innerHTML = `<div class="text-center py-6 text-slate-500">Зарегистрированных учеников пока нет.</div>`;
+        return;
+      }
+
+      list.innerHTML = students.map(s => `
+        <div class="p-3 bg-slate-950 border border-slate-800 rounded-xl flex items-center justify-between">
+          <div>
+            <div class="text-sm font-bold text-white">${s.full_name || 'Без имени'}</div>
+            <div class="text-xs text-slate-400">${s.email || ''}</div>
+          </div>
+          <div class="flex items-center space-x-2">
+            <span class="text-[10px] px-2 py-0.5 rounded-full font-bold uppercase ${s.is_active ? 'bg-green-900/40 text-green-400 border border-green-500/30' : 'bg-red-900/40 text-red-400 border border-red-500/30'}">
+              ${s.is_active ? 'Доступ открыт' : 'Заблокирован'}
+            </span>
+            <button onclick="toggleStudentAccess('${s.id}', ${!s.is_active})" class="text-xs px-3 py-1.5 rounded-lg font-semibold transition ${s.is_active ? 'bg-red-600/20 text-red-400 hover:bg-red-600/30' : 'bg-green-600 text-white hover:bg-green-500'}">
+              ${s.is_active ? 'Закрыть доступ' : 'Открыть доступ'}
+            </button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function closeStudentsModal() {
+      document.getElementById('students-modal').classList.add('hidden');
+    }
+
+    async function toggleStudentAccess(studentId, newStatus) {
+      await supabaseClient.from('profiles').update({ is_active: newStatus }).eq('id', studentId);
+      openStudentsModal();
     }
 
     async function createCoursePrompt() {

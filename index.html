@@ -112,19 +112,6 @@
     </div>
   </div>
 
-  <div id="homeworks-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
-    <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-3xl w-full p-6 shadow-2xl max-h-[85vh] flex flex-col">
-      <div class="flex justify-between items-center mb-4">
-        <h3 class="text-lg font-bold text-white flex items-center gap-2">
-          <i class="fa-solid fa-file-signature text-indigo-400"></i> <span>Проверка домашних заданий</span>
-        </h3>
-        <button onclick="closeHomeworksModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
-      </div>
-      <div class="overflow-y-auto flex-grow space-y-4 pr-1" id="homeworks-list-container">
-      </div>
-    </div>
-  </div>
-
   <div id="reset-password-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
     <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl">
       <div class="flex justify-between items-center mb-4">
@@ -510,9 +497,6 @@
           
           ${userRole === 'admin' ? `
             <div class="flex items-center gap-2">
-              <button onclick="openHomeworksModal()" class="bg-purple-600 hover:bg-purple-500 text-white text-xs sm:text-sm font-semibold px-3 py-2 sm:px-4 sm:py-2.5 rounded-xl transition flex items-center gap-2">
-                <i class="fa-solid fa-file-signature"></i> <span>Задания</span>
-              </button>
               <button onclick="openStudentsModal()" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs sm:text-sm font-semibold px-3 py-2 sm:px-4 sm:py-2.5 rounded-xl transition flex items-center gap-2">
                 <i class="fa-solid fa-users"></i> <span>Ученики</span>
               </button>
@@ -614,19 +598,6 @@
       const embedUrl = getEmbedUrl(activeLesson.video_url);
       const isCompleted = !!userProgressMap[activeLesson.id];
 
-      let studentHomework = null;
-      if (currentUser && userRole !== 'admin') {
-        const { data: hwData } = await supabaseClient
-          .from('homework_submissions')
-          .select('*')
-          .eq('lesson_id', activeLesson.id)
-          .eq('user_id', currentUser.id)
-          .order('created_at', { ascending: false })
-          .limit(1);
-        
-        if (hwData && hwData.length > 0) studentHomework = hwData[0];
-      }
-
       let attachmentsList = activeLesson.attachments || [];
       if (typeof attachmentsList === 'string') {
         try { attachmentsList = JSON.parse(attachmentsList); } catch(e) { attachmentsList = []; }
@@ -658,7 +629,7 @@
                 `<video src="${activeLesson.video_url}" controls class="w-full h-full"></video>`}
             </div>
 
-            <!-- Урок инфо (Кнопка "Отметить как пройденный" ТОЛЬКО для учеников) -->
+            <!-- Урок инфо -->
             <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-4">
               <div class="flex flex-wrap items-center justify-between gap-3">
                 <h2 class="text-lg sm:text-xl font-bold text-white">${activeLesson.title}</h2>
@@ -693,59 +664,9 @@
                 </div>
               </div>
             ` : ''}
-
-            <!-- Блок Домашнего Задания (Отображается ТОЛЬКО ученикам) -->
-            ${userRole !== 'admin' ? `
-              <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-4">
-                <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2">
-                  <i class="fa-solid fa-pen-to-square text-indigo-400"></i> Домашнее задание
-                </h3>
-
-                ${studentHomework ? `
-                  <div class="p-4 bg-slate-950 border border-slate-800 rounded-xl space-y-2">
-                    <div class="flex items-center justify-between">
-                      <span class="text-xs text-slate-400">Статус проверки:</span>
-                      <span class="text-xs font-bold uppercase px-2 py-0.5 rounded-full ${
-                        studentHomework.status === 'approved' ? 'bg-green-900/40 text-green-400 border border-green-500/30' :
-                        studentHomework.status === 'rejected' ? 'bg-red-900/40 text-red-400 border border-red-500/30' :
-                        'bg-yellow-900/40 text-yellow-400 border border-yellow-500/30'
-                      }">
-                        ${studentHomework.status === 'approved' ? 'Принято' : studentHomework.status === 'rejected' ? 'На доработку' : 'На проверке'}
-                      </span>
-                    </div>
-
-                    ${studentHomework.admin_comment ? `
-                      <div class="mt-2 p-3 bg-blue-950/40 border border-blue-900/50 rounded-lg text-xs text-blue-200">
-                        <strong>Комментарий преподавателя:</strong> ${studentHomework.admin_comment}
-                      </div>
-                    ` : ''}
-                  </div>
-                ` : ''}
-
-                <form onsubmit="submitHomework(event, '${activeLesson.id}')" class="space-y-3">
-                  <textarea id="hw-text" rows="3" placeholder="Введите ваш ответ или решение..." class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs sm:text-sm text-white focus:outline-none focus:border-blue-500"></textarea>
-
-                  <div>
-                    <label class="block text-[11px] text-slate-400 mb-1">Прикрепить файл (Excel, PDF, фото, документ):</label>
-                    <input type="file" id="hw-file-input" class="w-full text-xs text-slate-400 file:mr-3 file:py-2 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-slate-800 file:text-blue-400 hover:file:bg-slate-700 cursor-pointer">
-                  </div>
-
-                  <div>
-                    <label class="block text-[11px] text-slate-400 mb-1">Или ссылка на файл (Google Drive / Яндекс Диск):</label>
-                    <input type="url" id="hw-file-url" placeholder="https://..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500">
-                  </div>
-
-                  <div id="hw-msg" class="text-xs hidden p-2.5 rounded-lg"></div>
-
-                  <button type="submit" id="hw-submit-btn" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold px-4 py-2.5 rounded-xl transition flex items-center gap-2">
-                    <i class="fa-solid fa-paper-plane"></i> <span>Отправить решение</span>
-                  </button>
-                </form>
-              </div>
-            ` : ''}
           </div>
 
-          <!-- Список уроков (Галочка "Пройдено" отображается ТОЛЬКО ученикам) -->
+          <!-- Список уроков -->
           <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 h-fit">
             <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4 px-2">Список уроков</h3>
             <div class="space-y-2">
@@ -800,137 +721,6 @@
       }, { onConflict: 'user_id,lesson_id' });
 
       switchActiveLesson(lessonId, courseId);
-    }
-
-    async function submitHomework(e, lessonId) {
-      e.preventDefault();
-      const text = document.getElementById('hw-text').value.trim();
-      const fileInput = document.getElementById('hw-file-input');
-      let fileUrl = document.getElementById('hw-file-url').value.trim();
-      const msg = document.getElementById('hw-msg');
-      const submitBtn = document.getElementById('hw-submit-btn');
-
-      if (!text && !fileUrl && (!fileInput.files || fileInput.files.length === 0)) return;
-
-      submitBtn.disabled = true;
-      submitBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> <span>Загрузка...</span>`;
-      msg.classList.add('hidden');
-
-      if (fileInput.files && fileInput.files.length > 0) {
-        const file = fileInput.files[0];
-        const fileExt = file.name.split('.').pop();
-        const fileName = `${currentUser.id}_${Date.now()}.${fileExt}`;
-        const filePath = `submissions/${fileName}`;
-
-        const { data, error: uploadErr } = await supabaseClient
-          .storage
-          .from('homeworks')
-          .upload(filePath, file);
-
-        if (uploadErr) {
-          msg.classList.remove('hidden');
-          msg.className = "text-xs p-2.5 rounded-lg bg-red-950/50 text-red-400 border border-red-900/50";
-          msg.innerText = "Ошибка загрузки файла: " + uploadErr.message;
-          submitBtn.disabled = false;
-          submitBtn.innerHTML = `<i class="fa-solid fa-paper-plane"></i> <span>Отправить решение</span>`;
-          return;
-        }
-
-        const { data: publicUrlData } = supabaseClient
-          .storage
-          .from('homeworks')
-          .getPublicUrl(filePath);
-
-        fileUrl = publicUrlData.publicUrl;
-      }
-
-      const { error } = await supabaseClient.from('homework_submissions').insert([{
-        user_id: currentUser.id,
-        lesson_id: lessonId,
-        student_name: userFullName,
-        answer_text: text,
-        file_url: fileUrl,
-        status: 'pending'
-      }]);
-
-      submitBtn.disabled = false;
-      submitBtn.innerHTML = `<i class="fa-solid fa-paper-plane"></i> <span>Отправить решение</span>`;
-      msg.classList.remove('hidden');
-
-      if (error) {
-        msg.className = "text-xs p-2.5 rounded-lg bg-red-950/50 text-red-400 border border-red-900/50";
-        msg.innerText = "Ошибка сохранения: " + error.message;
-      } else {
-        msg.className = "text-xs p-2.5 rounded-lg bg-green-950/50 text-green-400 border border-green-900/50";
-        msg.innerText = "Решение и файл успешно отправлены преподавателю!";
-        document.getElementById('hw-text').value = '';
-        document.getElementById('hw-file-url').value = '';
-        fileInput.value = '';
-      }
-    }
-
-    async function openHomeworksModal() {
-      const list = document.getElementById('homeworks-list-container');
-      list.innerHTML = `<div class="text-center py-6 text-slate-500"><i class="fa-solid fa-spinner fa-spin text-xl"></i></div>`;
-      document.getElementById('homeworks-modal').classList.remove('hidden');
-
-      const { data: hwList } = await supabaseClient
-        .from('homework_submissions')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (!hwList || hwList.length === 0) {
-        list.innerHTML = `<div class="text-center py-6 text-slate-500">Присланных домашних заданий пока нет.</div>`;
-        return;
-      }
-
-      list.innerHTML = hwList.map(hw => `
-        <div class="p-4 bg-slate-950 border border-slate-800 rounded-xl space-y-3">
-          <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-2">
-            <div>
-              <span class="text-sm font-bold text-white">${hw.student_name || 'Ученик'}</span>
-              <span class="text-xs text-slate-500 ml-2">${new Date(hw.created_at).toLocaleString()}</span>
-            </div>
-            <span class="text-[10px] px-2 py-0.5 rounded-full font-bold uppercase ${
-              hw.status === 'approved' ? 'bg-green-900/40 text-green-400 border border-green-500/30' :
-              hw.status === 'rejected' ? 'bg-red-900/40 text-red-400 border border-red-500/30' :
-              'bg-yellow-900/40 text-yellow-400 border border-yellow-500/30'
-            }">
-              ${hw.status === 'approved' ? 'Принято' : hw.status === 'rejected' ? 'На доработку' : 'Ожидает проверки'}
-            </span>
-          </div>
-
-          <div class="text-xs sm:text-sm text-slate-300">${hw.answer_text || 'Без текста'}</div>
-
-          ${hw.file_url ? `
-            <div>
-              <a href="${hw.file_url}" target="_blank" class="inline-flex items-center gap-2 text-xs text-blue-400 hover:underline">
-                <i class="fa-solid fa-paperclip"></i> Открыть прикрепленный файл
-              </a>
-            </div>
-          ` : ''}
-
-          <div class="pt-2 border-t border-slate-800/80 space-y-2">
-            <input type="text" id="admin-comment-${hw.id}" value="${hw.admin_comment || ''}" placeholder="Комментарий преподавателя..." class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-1.5 text-xs text-white">
-            <div class="flex justify-end gap-2">
-              <button onclick="updateHomeworkStatus('${hw.id}', 'rejected')" class="px-3 py-1 bg-red-600/20 text-red-400 hover:bg-red-600/30 rounded-lg text-xs font-semibold">На доработку</button>
-              <button onclick="updateHomeworkStatus('${hw.id}', 'approved')" class="px-3 py-1 bg-green-600 text-white hover:bg-green-500 rounded-lg text-xs font-semibold">Принять задание</button>
-            </div>
-          </div>
-        </div>
-      `).join('');
-    }
-
-    function closeHomeworksModal() { document.getElementById('homeworks-modal').classList.add('hidden'); }
-
-    async function updateHomeworkStatus(hwId, status) {
-      const comment = document.getElementById(`admin-comment-${hwId}`)?.value.trim() || '';
-      await supabaseClient.from('homework_submissions').update({
-        status: status,
-        admin_comment: comment
-      }).eq('id', hwId);
-
-      openHomeworksModal();
     }
 
     function downloadCertificate(courseTitle) {

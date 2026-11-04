@@ -422,7 +422,7 @@
 
       if (error) {
         errorBox.innerText = error.message;
-        errorBox.classList.add('hidden');
+        errorBox.classList.remove('hidden');
       } else {
         if (data.user) {
           await supabaseClient.from('profiles').upsert({
@@ -520,6 +520,7 @@
             progressPercent = Math.round((completedCount / courseLessons.length) * 100);
           }
 
+          // Текст количества уроков в зависимости от языка
           const lessonsText = currentLang === 'kk' ? `${lessonsCount} сабақ` : `${lessonsCount} уроков`;
 
           html += `
@@ -642,10 +643,12 @@
             <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-4">
               <div class="flex flex-wrap items-center justify-between gap-3">
                 <h2 class="text-lg sm:text-xl font-bold text-white">${activeLesson.title}</h2>
-                <button onclick="toggleLessonProgress('${activeLesson.id}', '${courseId}')" class="px-3.5 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 transition ${isCompleted ? 'bg-green-600/20 text-green-400 border border-green-500/40' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}">
-                  <i class="fa-solid ${isCompleted ? 'fa-circle-check text-green-400' : 'fa-circle'}"></i>
-                  <span>${isCompleted ? 'Урок пройден' : 'Отметить как пройденный'}</span>
-                </button>
+                ${userRole !== 'admin' ? `
+                  <button onclick="toggleLessonProgress('${activeLesson.id}', '${courseId}')" class="px-3.5 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 transition ${isCompleted ? 'bg-green-600/20 text-green-400 border border-green-500/40' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}">
+                    <i class="fa-solid ${isCompleted ? 'fa-circle-check text-green-400' : 'fa-circle'}"></i>
+                    <span>${isCompleted ? 'Урок пройден' : 'Отметить как пройденный'}</span>
+                  </button>
+                ` : ''}
               </div>
               <p class="text-xs sm:text-sm text-slate-400 leading-relaxed">${activeLesson.description || ''}</p>
             </div>
@@ -682,8 +685,10 @@
                 return `
                   <div class="p-3 rounded-xl bg-slate-950 border border-slate-800/60 hover:border-blue-500/50 transition flex items-center justify-between group">
                     <div class="cursor-pointer flex items-center gap-2.5 flex-grow mr-2 min-w-0" onclick="switchActiveLesson('${l.id}', '${courseId}')">
-                      <i class="fa-solid ${lCompleted ? 'fa-circle-check text-green-400 text-sm' : 'fa-circle text-slate-700 text-xs'} flex-shrink-0"></i>
-                      <span class="text-xs sm:text-sm font-medium ${lCompleted ? 'text-slate-400 line-through' : 'text-slate-200'} truncate">${idx + 1}. ${l.title}</span>
+                      ${userRole !== 'admin' ? `
+                        <i class="fa-solid ${lCompleted ? 'fa-circle-check text-green-400 text-sm' : 'fa-circle text-slate-700 text-xs'} flex-shrink-0"></i>
+                      ` : ''}
+                      <span class="text-xs sm:text-sm font-medium ${(userRole !== 'admin' && lCompleted) ? 'text-slate-400 line-through' : 'text-slate-200'} truncate">${idx + 1}. ${l.title}</span>
                     </div>
                     <div class="flex items-center space-x-1.5 flex-shrink-0">
                       ${userRole === 'admin' ? `

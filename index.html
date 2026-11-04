@@ -32,20 +32,20 @@
         </div>
       </div>
 
-      <!-- Правый блок: Языки + Настройки + Профиль -->
+      <!-- Правый блок -->
       <div class="flex items-center space-x-2 sm:space-x-3 ml-auto">
-        <!-- Языки -->
+        <!-- Переключатель языков -->
         <div class="bg-slate-900 border border-slate-800 rounded-lg p-0.5 sm:p-1 flex items-center text-[11px] sm:text-xs font-semibold">
           <button onclick="setLanguage('ru')" id="lang-btn-ru" class="px-2 py-0.5 sm:py-1 rounded-md transition-all">RU</button>
           <button onclick="setLanguage('kk')" id="lang-btn-kk" class="px-2 py-0.5 sm:py-1 rounded-md transition-all">KK</button>
         </div>
 
-        <!-- Настройка БД (Только админ) -->
+        <!-- Настройка БД (Только для Админа) -->
         <button id="db-config-btn" onclick="openConfigModal()" class="hidden p-1.5 sm:p-2 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition" title="Настройки">
           <i class="fa-solid fa-database text-xs sm:text-sm"></i>
         </button>
 
-        <!-- Меню профиля -->
+        <!-- Меню пользователя -->
         <div id="user-menu" class="hidden flex items-center space-x-2 border-l border-slate-800 pl-2 sm:pl-3">
           <button onclick="openProfileModal()" class="flex items-center space-x-1.5 hover:opacity-80 transition max-w-[120px] sm:max-w-none">
             <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-xs sm:text-sm flex-shrink-0" id="user-avatar">A</div>
@@ -90,7 +90,7 @@
     </div>
   </div>
 
-  <!-- Модалка Управления Учениками (Только Админ) -->
+  <!-- Модалка Управления Учениками (Только для Админа) -->
   <div id="students-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
     <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-2xl w-full p-6 shadow-2xl max-h-[85vh] flex flex-col">
       <div class="flex justify-between items-center mb-4">
@@ -100,7 +100,6 @@
         <button onclick="closeStudentsModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
       </div>
       <div class="overflow-y-auto flex-grow space-y-3 pr-1" id="students-list-container">
-        <!-- Список учеников загружается динамически -->
       </div>
     </div>
   </div>
@@ -153,7 +152,8 @@
         noCourses: "Курсы еще не созданы.",
         noLessons: "В этом курсе пока нет уроков.",
         noAccessTitle: "Доступ еще не активирован",
-        noAccessText: "Ваш аккаунт успешно зарегистрирован, но доступ к видеоурокам открывается после подтверждения оплаты. Пожалуйста, напишите администратору.",
+        noAccessText: "Ваш аккаунт успешно зарегистрирован! Доступ к урокам откроется после подтверждения оплаты.",
+        whatsappBtn: "Написать Администратору в WhatsApp",
         noDbWarning: "Ошибка подключения к базе данных."
       },
       kk: {
@@ -178,7 +178,8 @@
         noCourses: "Курстар әлі жасалмаған.",
         noLessons: "Бұл курста әлі сабақтар жоқ.",
         noAccessTitle: "Қолжетімділік әлі белсендірілмеген",
-        noAccessText: "Тіркелу сәтті өтті! Сабақтарға рұқсат алу үшін төлемді растау қажет. Әкімшіге хабарласыңыз.",
+        noAccessText: "Тіркелуіңіз сәтті өтті! Сабақтарға рұқсат алу үшін төлемді растау қажет.",
+        whatsappBtn: "Әкімшіге WhatsApp-қа жазу",
         noDbWarning: "Дерекқорға қосылу қатесі."
       }
     };
@@ -359,7 +360,6 @@
         return;
       }
 
-      // Новый ученик регистрируется с is_active = false
       const { data, error } = await supabaseClient.auth.signUp({
         email,
         password,
@@ -372,7 +372,6 @@
         errorBox.innerText = error.message;
         errorBox.classList.remove('hidden');
       } else {
-        // Создаем профиль в БД со статусом is_active = false
         if (data.user) {
           await supabaseClient.from('profiles').upsert({
             id: data.user.id,
@@ -391,15 +390,25 @@
     async function renderCoursesView() {
       const container = document.getElementById('app-content');
 
-      // Проверка доступа для обычных учеников
+      // Блок блокировки для неоплаченных учеников с прямой ссылкой на WhatsApp
       if (userRole !== 'admin' && !userIsActive) {
+        const waText = encodeURIComponent("Саламатсыз ба! Мен платформаға тіркелдім, курсты ашып бересіз бе?");
+        const waUrl = `https://wa.me/77013087711?text=${waText}`;
+
         container.innerHTML = `
-          <div class="max-w-lg mx-auto my-12 bg-slate-900 border border-slate-800 rounded-2xl p-8 text-center shadow-2xl">
+          <div class="max-w-lg mx-auto my-8 sm:my-12 bg-slate-900 border border-slate-800 rounded-2xl p-6 sm:p-8 text-center shadow-2xl">
             <div class="w-16 h-16 rounded-full bg-yellow-500/10 border border-yellow-500/30 text-yellow-500 flex items-center justify-center mx-auto mb-4 text-2xl">
               <i class="fa-solid fa-lock"></i>
             </div>
             <h2 class="text-xl font-bold text-white mb-2">${i18n[currentLang].noAccessTitle}</h2>
-            <p class="text-xs sm:text-sm text-slate-400 leading-relaxed">${i18n[currentLang].noAccessText}</p>
+            <p class="text-xs sm:text-sm text-slate-400 leading-relaxed mb-6">${i18n[currentLang].noAccessText}</p>
+            
+            <!-- Прямая кнопка контактов администратора -->
+            <a href="${waUrl}" target="_blank" class="inline-flex items-center justify-center gap-2 w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-3 px-4 rounded-xl transition shadow-lg shadow-emerald-600/20 text-sm">
+              <i class="fa-brands fa-whatsapp text-lg"></i>
+              <span>${i18n[currentLang].whatsappBtn}</span>
+            </a>
+            <div class="mt-3 text-xs text-slate-500 font-mono">+7 701 308 77 11</div>
           </div>
         `;
         return;
@@ -559,7 +568,7 @@
       return null;
     }
 
-    // Управление Учениками (Админ)
+    // Управление учениками (Админ)
     async function openStudentsModal() {
       const list = document.getElementById('students-list-container');
       list.innerHTML = `<div class="text-center py-6 text-slate-500"><i class="fa-solid fa-spinner fa-spin text-xl"></i></div>`;
@@ -577,12 +586,12 @@
       }
 
       list.innerHTML = students.map(s => `
-        <div class="p-3 bg-slate-950 border border-slate-800 rounded-xl flex items-center justify-between">
-          <div>
-            <div class="text-sm font-bold text-white">${s.full_name || 'Без имени'}</div>
-            <div class="text-xs text-slate-400">${s.email || ''}</div>
+        <div class="p-3 bg-slate-950 border border-slate-800 rounded-xl flex items-center justify-between gap-2">
+          <div class="min-w-0">
+            <div class="text-sm font-bold text-white truncate">${s.full_name || 'Без имени'}</div>
+            <div class="text-xs text-slate-400 truncate">${s.email || ''}</div>
           </div>
-          <div class="flex items-center space-x-2">
+          <div class="flex items-center space-x-2 flex-shrink-0">
             <span class="text-[10px] px-2 py-0.5 rounded-full font-bold uppercase ${s.is_active ? 'bg-green-900/40 text-green-400 border border-green-500/30' : 'bg-red-900/40 text-red-400 border border-red-500/30'}">
               ${s.is_active ? 'Доступ открыт' : 'Заблокирован'}
             </span>

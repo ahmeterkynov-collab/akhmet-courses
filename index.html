@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>EduLearn - Платформа Обучения</title>
+  <title>Ахметтен пайдалы ақпарат - Оқыту платформасы</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
@@ -23,12 +23,11 @@
   <header class="glassmorphism sticky top-0 z-50">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
       <div class="flex items-center space-x-3 cursor-pointer" onclick="handleLogoClick()">
-        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center shadow-lg shadow-blue-500/30">
-          <i class="fa-solid fa-graduation-cap text-white text-xl"></i>
-        </div>
+        <!-- Фото бренда Ахметтен пайдалы ақпарат -->
+        <img src="https://p16-sign-va.tiktokcdn.com/tos-maliva-avt-0068/6886f3ee61cf6662f1b894a66006e428~tplv-tiktokx-cropcenter:1080:1080.jpeg?dr=14579&nonce=19808&refresh_token=68e7bcf5273f69b1fa85145d8b87aa6f&x-expires=1793991600&x-signature=8bAnG3Lw5rBOn649i%2F9m9T42e1k%3D" alt="Ахмет" class="w-10 h-10 rounded-xl object-cover border border-blue-500/40 shadow-md shadow-blue-500/20">
         <div>
-          <span class="text-xl font-bold text-white">EduLearn</span>
-          <span class="block text-xs text-blue-400 font-medium" id="lang-subtitle">Оқыту платформасы</span>
+          <span class="text-base sm:text-lg font-bold text-white leading-tight block">Ахметтен пайдалы ақпарат</span>
+          <span class="block text-[11px] text-blue-400 font-medium" id="lang-subtitle">Оқыту платформасы</span>
         </div>
       </div>
 
@@ -39,7 +38,7 @@
           <button onclick="setLanguage('kk')" id="lang-btn-kk" class="px-2.5 py-1 rounded-md transition-all">KK</button>
         </div>
 
-        <!-- Кнопка настройки БД (Скрыта для учеников) -->
+        <!-- Кнопка настройки БД (Скрыта от учеников) -->
         <button id="db-config-btn" onclick="openConfigModal()" class="hidden p-2 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition" title="Настройки Supabase">
           <i class="fa-solid fa-database"></i>
         </button>
@@ -111,7 +110,7 @@
   </div>
 
   <script>
-    // ВШИТЫЕ ВАШИ КЛЮЧИ SUPABASE:
+    // Ваши подключенные ключи Supabase
     const DEFAULT_SUPABASE_URL = 'https://qnjddzjvjfoogubmzynn.supabase.co';
     const DEFAULT_SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFuamRkemp2amZvb2d1Ym16eW5uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTM4MDgxNzMsImV4cCI6MjEwOTM4NDE3M30.ELwDRdG5mWblCsQurRDfXcbruY-UuZcXcdEMzkCEKno';
 

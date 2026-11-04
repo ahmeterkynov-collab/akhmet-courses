@@ -34,18 +34,18 @@
 
       <!-- Правый блок -->
       <div class="flex items-center space-x-2 sm:space-x-3 ml-auto">
-        <!-- Переключатель языков -->
+        <!-- Языки -->
         <div class="bg-slate-900 border border-slate-800 rounded-lg p-0.5 sm:p-1 flex items-center text-[11px] sm:text-xs font-semibold">
           <button onclick="setLanguage('ru')" id="lang-btn-ru" class="px-2 py-0.5 sm:py-1 rounded-md transition-all">RU</button>
           <button onclick="setLanguage('kk')" id="lang-btn-kk" class="px-2 py-0.5 sm:py-1 rounded-md transition-all">KK</button>
         </div>
 
-        <!-- Настройка БД (Только для Админа) -->
+        <!-- Настройка БД (Только Админ) -->
         <button id="db-config-btn" onclick="openConfigModal()" class="hidden p-1.5 sm:p-2 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition" title="Настройки">
           <i class="fa-solid fa-database text-xs sm:text-sm"></i>
         </button>
 
-        <!-- Меню пользователя -->
+        <!-- Меню профиля -->
         <div id="user-menu" class="hidden flex items-center space-x-2 border-l border-slate-800 pl-2 sm:pl-3">
           <button onclick="openProfileModal()" class="flex items-center space-x-1.5 hover:opacity-80 transition max-w-[120px] sm:max-w-none">
             <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-xs sm:text-sm flex-shrink-0" id="user-avatar">A</div>
@@ -90,7 +90,7 @@
     </div>
   </div>
 
-  <!-- Модалка Управления Учениками (Только для Админа) -->
+  <!-- Модалка Управления Учениками (Админ) -->
   <div id="students-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
     <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-2xl w-full p-6 shadow-2xl max-h-[85vh] flex flex-col">
       <div class="flex justify-between items-center mb-4">
@@ -149,6 +149,7 @@
         adminRole: "АДМИН",
         studentRole: "УЧЕНИК",
         deleteCourse: "Удалить курс",
+        editCourse: "Редактировать курс",
         noCourses: "Курсы еще не созданы.",
         noLessons: "В этом курсе пока нет уроков.",
         noAccessTitle: "Доступ еще не активирован",
@@ -175,6 +176,7 @@
         adminRole: "ӘКІМШІ",
         studentRole: "ОҚУШЫ",
         deleteCourse: "Курсты жою",
+        editCourse: "Курсты өңдеу",
         noCourses: "Курстар әлі жасалмаған.",
         noLessons: "Бұл курста әлі сабақтар жоқ.",
         noAccessTitle: "Қолжетімділік әлі белсендірілмеген",
@@ -192,6 +194,7 @@
     let userIsActive = false;
     let userFullName = '';
     let currentCourseLessons = [];
+    let currentCoursesList = [];
 
     function setLanguage(lang) {
       currentLang = lang;
@@ -390,7 +393,6 @@
     async function renderCoursesView() {
       const container = document.getElementById('app-content');
 
-      // Блок блокировки для неоплаченных учеников с прямой ссылкой на WhatsApp
       if (userRole !== 'admin' && !userIsActive) {
         const waText = encodeURIComponent("Саламатсыз ба! Мен платформаға тіркелдім, курсты ашып бересіз бе?");
         const waUrl = `https://wa.me/77013087711?text=${waText}`;
@@ -403,7 +405,6 @@
             <h2 class="text-xl font-bold text-white mb-2">${i18n[currentLang].noAccessTitle}</h2>
             <p class="text-xs sm:text-sm text-slate-400 leading-relaxed mb-6">${i18n[currentLang].noAccessText}</p>
             
-            <!-- Прямая кнопка контактов администратора -->
             <a href="${waUrl}" target="_blank" class="inline-flex items-center justify-center gap-2 w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-3 px-4 rounded-xl transition shadow-lg shadow-emerald-600/20 text-sm">
               <i class="fa-brands fa-whatsapp text-lg"></i>
               <span>${i18n[currentLang].whatsappBtn}</span>
@@ -417,6 +418,7 @@
       container.innerHTML = `<div class="text-center py-12 text-slate-500"><i class="fa-solid fa-spinner fa-spin text-2xl"></i></div>`;
 
       const { data: courses } = await supabaseClient.from('courses').select('*').order('created_at', { ascending: false });
+      currentCoursesList = courses || [];
 
       let html = `
         <div class="flex flex-wrap justify-between items-center gap-3 mb-6 sm:mb-8">
@@ -453,9 +455,14 @@
                   Смотреть уроки <i class="fa-solid fa-chevron-right text-[10px]"></i>
                 </button>
                 ${userRole === 'admin' ? `
-                  <button onclick="deleteCourse('${c.id}')" class="text-xs text-red-400 hover:text-red-300 p-1" title="${i18n[currentLang].deleteCourse}">
-                    <i class="fa-solid fa-trash"></i>
-                  </button>
+                  <div class="flex items-center space-x-2">
+                    <button onclick="editCoursePrompt('${c.id}')" class="text-xs text-slate-400 hover:text-yellow-400 p-1 transition" title="${i18n[currentLang].editCourse}">
+                      <i class="fa-solid fa-pen"></i>
+                    </button>
+                    <button onclick="deleteCourse('${c.id}')" class="text-xs text-slate-400 hover:text-red-400 p-1 transition" title="${i18n[currentLang].deleteCourse}">
+                      <i class="fa-solid fa-trash"></i>
+                    </button>
+                  </div>
                 ` : ''}
               </div>
             </div>
@@ -568,6 +575,38 @@
       return null;
     }
 
+    // Редактирование курса (Админ)
+    async function editCoursePrompt(courseId) {
+      const course = currentCoursesList.find(c => c.id === courseId);
+      if (!course) return;
+
+      const title = prompt("Название курса:", course.title);
+      if (title === null) return;
+      const description = prompt("Описание курса:", course.description || '');
+      if (description === null) return;
+      const cover_url = prompt("Ссылка на обложку (URL):", course.cover_url || '');
+
+      await supabaseClient.from('courses').update({ title, description, cover_url }).eq('id', courseId);
+      renderCoursesView();
+    }
+
+    async function createCoursePrompt() {
+      const title = prompt("Название курса:");
+      if (!title) return;
+      const description = prompt("Описание:");
+      const cover_url = prompt("Ссылка на обложку (URL):");
+
+      await supabaseClient.from('courses').insert([{ title, description, cover_url }]);
+      renderCoursesView();
+    }
+
+    async function deleteCourse(id) {
+      if (confirm("Удалить этот курс?")) {
+        await supabaseClient.from('courses').delete().eq('id', id);
+        renderCoursesView();
+      }
+    }
+
     // Управление учениками (Админ)
     async function openStudentsModal() {
       const list = document.getElementById('students-list-container');
@@ -610,23 +649,6 @@
     async function toggleStudentAccess(studentId, newStatus) {
       await supabaseClient.from('profiles').update({ is_active: newStatus }).eq('id', studentId);
       openStudentsModal();
-    }
-
-    async function createCoursePrompt() {
-      const title = prompt("Название курса:");
-      if (!title) return;
-      const description = prompt("Описание:");
-      const cover_url = prompt("Ссылка на обложку (URL):");
-
-      await supabaseClient.from('courses').insert([{ title, description, cover_url }]);
-      renderCoursesView();
-    }
-
-    async function deleteCourse(id) {
-      if (confirm("Удалить этот курс?")) {
-        await supabaseClient.from('courses').delete().eq('id', id);
-        renderCoursesView();
-      }
     }
 
     async function addLessonPrompt(courseId) {

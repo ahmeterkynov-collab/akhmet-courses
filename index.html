@@ -734,8 +734,25 @@
       const container = document.getElementById('app-content');
       container.innerHTML = `<div class="text-center py-12 text-slate-500"><i class="fa-solid fa-spinner fa-spin text-2xl"></i></div>`;
 
-      const { data: lessons } = await supabaseClient.from('lessons').select('*').eq('course_id', courseId).order('position', { ascending: true });
-      currentCourseLessons = lessons || [];
+     const { data: lessons, error: lessonsError } = await supabaseClient
+  .from('lessons')
+  .select('*')
+  .eq('course_id', courseId)
+  .order('position', { ascending: true });
+
+if (lessonsError) {
+    console.error('Ошибка загрузки уроков:', lessonsError);
+
+    container.innerHTML =
+      '<div class="text-center py-8 text-red-400" id="lesson-load-error"></div>';
+
+    container.querySelector('#lesson-load-error').textContent =
+      'Ошибка загрузки уроков: ' + lessonsError.message;
+
+    return;
+}
+
+currentCourseLessons = lessons || [];
 
       const hasAccess = userRole === 'admin' || !!userCourseAccessMap[courseId];
 

@@ -197,8 +197,9 @@
   </div>
 
   <script>
+    // Жестко прописываем ключи, переданные пользователем
     const DEFAULT_SUPABASE_URL = 'https://qnjddzjvjfoogubmzynn.supabase.co';
-const DEFAULT_SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI...';
+    const DEFAULT_SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFuamRkemp2amZvb2d1Ym16eW5uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTM4MDgxNzMsImV4cCI6MjEwOTM4NDE3M30.ELwDRdG5mWblCsQurRDfXcbruY-UuZcXcdEMzkCEKno';
 
     const i18n = {
       ru: {
@@ -312,7 +313,6 @@ const DEFAULT_SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI...';
     let userProgressMap = {};
     let allStudentsData = [];
     
-    // Централизованное состояние для корректной навигации без сбросов
     let navigationState = { view: 'auth', courseId: null, lessonId: null };
 
     function initTheme() {
@@ -333,19 +333,18 @@ const DEFAULT_SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI...';
       initTheme();
     }
 
-    // ИСПРАВЛЕНИЕ #1: Мгновенное обновление текстов без потери активной страницы
     function setLanguage(lang) {
       currentLang = lang;
       localStorage.setItem('lms_lang', lang);
       updateLanguageUI();
       
       if (!currentUser) {
-         renderAuthView(); // Если мы на экране входа, просто перерисовываем его
+         renderAuthView();
          return;
       }
 
       if (navigationState.view === 'courses') {
-         renderCoursesHTML(); // Только отрисовка HTML, без запросов в БД
+         renderCoursesHTML();
       } else if (navigationState.view === 'course-detail' && navigationState.courseId) {
          const hasAccess = userRole === 'admin' || !!userCourseAccessMap[navigationState.courseId];
          if (!hasAccess && userRole !== 'admin') {
@@ -359,7 +358,7 @@ const DEFAULT_SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI...';
              if (activeLesson) {
                  renderLessonDetailsView(activeLesson, navigationState.courseId, document.getElementById('app-content'));
              } else {
-                 openCourse(navigationState.courseId, false); // Если уроков нет в памяти, грузим заново
+                 openCourse(navigationState.courseId, false);
              }
          }
       }
@@ -433,8 +432,12 @@ const DEFAULT_SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI...';
     }
 
     function initSupabase() {
-      const url = localStorage.getItem('supabase_url') || DEFAULT_SUPABASE_URL;
-      const key = localStorage.getItem('supabase_key') || DEFAULT_SUPABASE_KEY;
+      // ПРИНУДИТЕЛЬНАЯ ОЧИСТКА КЭША. Чтобы старые (неверные) ключи из памяти удалились.
+      localStorage.removeItem('supabase_url');
+      localStorage.removeItem('supabase_key');
+      
+      const url = DEFAULT_SUPABASE_URL;
+      const key = DEFAULT_SUPABASE_KEY;
 
       if (url && key && window.supabase) {
         try {
@@ -446,7 +449,6 @@ const DEFAULT_SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI...';
       }
     }
 
-    // ИСПРАВЛЕНИЕ #2: Защита прав администратора для владельца
     async function checkAuthStatus() {
       if (!supabaseClient) return;
 
@@ -462,8 +464,6 @@ const DEFAULT_SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI...';
 
           let dbRole = profile?.role;
           
-          // Принудительная выдача прав админа владельцу почты
-          // Это решает проблему, когда RLS политики Supabase блокируют чтение своей роли
           if (currentUser.email === 'ahmet.erkynov@gmail.com') {
               dbRole = 'admin';
           }
@@ -475,7 +475,6 @@ const DEFAULT_SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI...';
           await loadUserProgress();
           updateUserMenu(userFullName);
           
-          // Переход на курсы после входа
           renderCoursesView();
         } else {
           currentUser = null;
@@ -522,7 +521,10 @@ const DEFAULT_SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI...';
 
     function updateUserMenu(name) {
       const menu = document.getElementById('user-menu');
+      
+      // Кнопку "Настройки БД" мы скрываем полностью, чтобы больше ничего не сломалось
       const dbBtn = document.getElementById('db-config-btn');
+      if (dbBtn) dbBtn.style.display = 'none';
 
       if (name) {
         menu.classList.remove('hidden');
@@ -533,15 +535,12 @@ const DEFAULT_SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI...';
         if (userRole === 'admin') {
           badge.innerText = i18n[currentLang].adminRole;
           badge.className = 'text-[9px] sm:text-[10px] px-1.5 py-0.5 rounded-full font-bold uppercase bg-blue-600/20 text-blue-400 border border-blue-500/40';
-          if (dbBtn) dbBtn.classList.remove('hidden');
         } else {
           badge.innerText = i18n[currentLang].studentRole;
           badge.className = 'text-[9px] sm:text-[10px] px-1.5 py-0.5 rounded-full font-semibold uppercase bg-slate-800 text-slate-400 border border-slate-700';
-          if (dbBtn) dbBtn.classList.add('hidden');
         }
       } else {
         menu.classList.add('hidden');
-        if (dbBtn) dbBtn.classList.add('hidden');
       }
     }
 
@@ -627,18 +626,20 @@ const DEFAULT_SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI...';
       }
     }
 
-    // Разделяем загрузку данных и отрисовку списка курсов
     async function renderCoursesView() {
       navigationState = { view: 'courses', courseId: null, lessonId: null };
       const container = document.getElementById('app-content');
       container.innerHTML = `<div class="text-center py-12 text-slate-500"><i class="fa-solid fa-spinner fa-spin text-2xl"></i></div>`;
 
-      const { data: courses } = await supabaseClient.from('courses').select('*').order('created_at', { ascending: false });
+      const { data: courses, error } = await supabaseClient.from('courses').select('*').order('created_at', { ascending: false });
+      if (error) {
+          container.innerHTML = `<div class="text-center py-12 text-red-500">Ошибка загрузки курсов: ${error.message}</div>`;
+          return;
+      }
       currentCoursesList = courses || [];
       renderCoursesHTML();
     }
 
-    // Чистая отрисовка курсов без запроса в БД (для мгновенной смены языка)
     async function renderCoursesHTML() {
       const container = document.getElementById('app-content');
       let html = ``;
@@ -686,7 +687,6 @@ const DEFAULT_SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI...';
 
       if (currentCoursesList && currentCoursesList.length > 0) {
         for (let c of currentCoursesList) {
-          // Подгружаем кол-во уроков локально
           const { data: courseLessons } = await supabaseClient.from('lessons').select('id').eq('course_id', c.id);
           const lessonsCount = courseLessons ? courseLessons.length : 0;
           const lessonsText = currentLang === 'kk' ? `${lessonsCount} сабақ` : `${lessonsCount} уроков`;
@@ -760,7 +760,6 @@ const DEFAULT_SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI...';
         return;
       }
 
-      // Если в навигации уже сохранен урок (например, при смене языка), открываем его
       let activeLesson = currentCourseLessons[0];
       if (navigationState.lessonId) {
          const found = currentCourseLessons.find(l => l.id === navigationState.lessonId);
@@ -922,7 +921,6 @@ const DEFAULT_SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI...';
     }
 
     function switchActiveLesson(lessonId, courseId) {
-      // ИСПРАВЛЕНИЕ: запоминаем выбранный урок в состоянии навигации
       navigationState.lessonId = lessonId;
       const lesson = currentCourseLessons.find(l => l.id === lessonId);
       if (lesson) {
@@ -1084,7 +1082,6 @@ const DEFAULT_SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI...';
 
     function closeStudentsModal() { document.getElementById('students-modal').classList.add('hidden'); }
 
-    // ИСПРАВЛЕНИЕ #3: Безопасное прикрепление файлов с перехватом ошибки Supabase
     async function addLessonPrompt(courseId) {
       const title = prompt("Название урока:");
       if (!title) return;
@@ -1108,7 +1105,6 @@ const DEFAULT_SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI...';
 
       const { error } = await supabaseClient.from('lessons').insert([lessonData]);
       if (error) {
-         // Перехват ошибки, если колонки attachments нет в БД
          if (error.message.includes('attachments')) {
              alert('Внимание! В базе данных Supabase (таблица "lessons") нет колонки "attachments". Видеоурок сейчас будет сохранен БЕЗ файла.\n\nЧтобы файлы заработали, зайдите в Supabase и создайте колонку "attachments" с типом данных "JSONB".');
              delete lessonData.attachments;
@@ -1190,21 +1186,10 @@ const DEFAULT_SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI...';
     }
 
     function openConfigModal() { 
-      document.getElementById('supabase-url').value = localStorage.getItem('supabase_url') || DEFAULT_SUPABASE_URL;
-      document.getElementById('supabase-key').value = localStorage.getItem('supabase_key') || DEFAULT_SUPABASE_KEY;
-      document.getElementById('config-modal').classList.remove('hidden'); 
+      // Функция оставлена пустой, так как настройки теперь жестко вшиты
     }
     function closeConfigModal() { document.getElementById('config-modal').classList.add('hidden'); }
     
-    async function saveSupabaseConfig() {
-      const url = document.getElementById('supabase-url').value.trim();
-      const key = document.getElementById('supabase-key').value.trim();
-      localStorage.setItem('supabase_url', url);
-      localStorage.setItem('supabase_key', key);
-      closeConfigModal();
-      initSupabase();
-    }
-
     function goHome() {
       if (currentUser) renderCoursesView(); else renderAuthView();
     }

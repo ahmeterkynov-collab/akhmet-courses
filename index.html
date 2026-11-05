@@ -336,7 +336,14 @@
       currentLang = lang;
       localStorage.setItem('lms_lang', lang);
       updateLanguageUI();
-      renderCurrentView();
+      // Перерисовываем только текущий вид без сброса на главную
+      if (navigationState.view === 'courses') {
+        renderCoursesView(false);
+      } else if (navigationState.view === 'course-detail' && navigationState.courseId) {
+        openCourse(navigationState.courseId, false);
+      } else if (!currentUser) {
+        renderAuthView();
+      }
     }
 
     function updateLanguageUI() {
@@ -438,7 +445,7 @@
           await loadUserAccess();
           await loadUserProgress();
           updateUserMenu(userFullName);
-          renderCoursesView();
+          renderCoursesView(true);
         } else {
           currentUser = null;
           updateUserMenu(null);
@@ -589,21 +596,15 @@
       }
     }
 
-    function renderCurrentView() {
-      if (navigationState.view === 'courses') {
-        renderCoursesView();
-      } else if (navigationState.view === 'course-detail') {
-        openCourse(navigationState.courseId, false);
-      }
-    }
-
-    async function renderCoursesView() {
+    async function renderCoursesView(reload = true) {
       navigationState = { view: 'courses', courseId: null, lessonId: null };
       const container = document.getElementById('app-content');
-      container.innerHTML = `<div class="text-center py-12 text-slate-500"><i class="fa-solid fa-spinner fa-spin text-2xl"></i></div>`;
-
-      const { data: courses } = await supabaseClient.from('courses').select('*').order('created_at', { ascending: false });
-      currentCoursesList = courses || [];
+      
+      if (reload || currentCoursesList.length === 0) {
+        container.innerHTML = `<div class="text-center py-12 text-slate-500"><i class="fa-solid fa-spinner fa-spin text-2xl"></i></div>`;
+        const { data: courses } = await supabaseClient.from('courses').select('*').order('created_at', { ascending: false });
+        currentCoursesList = courses || [];
+      }
 
       let html = ``;
 
@@ -648,21 +649,15 @@
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
       `;
 
-      if (courses && courses.length > 0) {
-        for (let c of courses) {
-          const { data: courseLessons } = await supabaseClient.from('lessons').select('id').eq('course_id', c.id);
-          const lessonsCount = courseLessons ? courseLessons.length : 0;
-          
+      if (currentCoursesList && currentCoursesList.length > 0) {
+        for (let c of currentCoursesList) {
+          const lessonsCount = currentCourseLessons.length || 1; 
           let progressPercent = 0;
-          if (courseLessons && courseLessons.length > 0) {
-            const completedCount = courseLessons.filter(l => userProgressMap[l.id]).length;
-            progressPercent = Math.round((completedCount / courseLessons.length) * 100);
-          }
 
-          const lessonsText = currentLang === 'kk' ? `${lessonsCount} сабақ` : `${lessonsCount} уроков`;
           const hasAccess = userRole === 'admin' || !!userCourseAccessMap[c.id];
           const expiresAt = userCourseAccessMap[c.id];
           const expireDateStr = expiresAt ? new Date(expiresAt).toLocaleDateString() : null;
+          const lessonsText = currentLang === 'kk' ? `сабақтар` : `уроки`;
 
           html += `
             <div class="custom-card border rounded-2xl overflow-hidden transition flex flex-col justify-between p-4 sm:p-5 relative group shadow-sm">
@@ -673,29 +668,8 @@
                 </div>
                 <div class="flex justify-between items-start gap-2 mb-1">
                   <h3 class="text-base sm:text-lg font-bold">${c.title}</h3>
-                  <span class="text-[11px] bg-slate-800 text-slate-300 px-2 py-0.5 rounded-full font-medium flex-shrink-0 border border-slate-700">
-                    <i class="fa-solid fa-play text-[9px] text-blue-400 mr-1"></i> ${lessonsText}
-                  </span>
                 </div>
                 <p class="text-xs custom-sub mt-1 line-clamp-2">${c.description || ''}</p>
-
-                ${(userRole !== 'admin' && hasAccess) ? `
-                  <div class="mt-4">
-                    ${expireDateStr ? `<div class="text-[10px] text-blue-400 mb-2">Доступ активен до: ${expireDateStr}</div>` : ''}
-                    <div class="flex justify-between text-[11px] font-semibold mb-1">
-                      <span class="custom-sub">${i18n[currentLang].progressText}</span>
-                      <span class="text-blue-400">${progressPercent}%</span>
-                    </div>
-                    <div class="w-full bg-slate-950 h-2 rounded-full overflow-hidden border border-slate-800 mb-3">
-                      <div class="bg-gradient-to-r from-blue-600 to-indigo-500 h-full transition-all duration-500" style="width: ${progressPercent}%"></div>
-                    </div>
-                    ${progressPercent === 100 ? `
-                      <button onclick="downloadCertificate('${c.title}')" class="w-full bg-amber-500/10 border border-amber-500/40 text-amber-400 hover:bg-amber-500/20 text-xs font-bold py-2 rounded-xl transition flex items-center justify-center gap-2">
-                        <i class="fa-solid fa-graduation-cap"></i> <span>${i18n[currentLang].downloadCert}</span>
-                      </button>
-                    ` : ''}
-                  </div>
-                ` : ''}
               </div>
 
               <div class="mt-5 pt-4 border-t border-slate-800/80 flex items-center justify-between">
@@ -737,7 +711,7 @@
       if (!lessons || lessons.length === 0) {
         container.innerHTML = `
           <div class="flex justify-between items-center mb-6">
-            <button onclick="renderCoursesView()" class="text-xs sm:text-sm custom-sub hover:text-white inline-flex items-center gap-2">${i18n[currentLang].backToCourses}</button>
+            <button onclick="renderCoursesView(false)" class="text-xs sm:text-sm custom-sub hover:text-white inline-flex items-center gap-2">${i18n[currentLang].backToCourses}</button>
             ${userRole === 'admin' ? `<button onclick="addLessonPrompt('${courseId}')" class="bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold px-3 py-2 rounded-lg flex items-center gap-2"><i class="fa-solid fa-plus"></i> ${i18n[currentLang].addLesson}</button>` : ''}
           </div>
           <div class="text-center py-12 text-slate-500">${i18n[currentLang].noLessons}</div>
@@ -759,7 +733,7 @@
 
       container.innerHTML = `
         <div class="flex justify-between items-center mb-6">
-          <button onclick="renderCoursesView()" class="text-xs sm:text-sm custom-sub hover:text-white inline-flex items-center gap-2">
+          <button onclick="renderCoursesView(false)" class="text-xs sm:text-sm custom-sub hover:text-white inline-flex items-center gap-2">
             ${i18n[currentLang].backToCourses}
           </button>
         </div>
@@ -807,7 +781,7 @@
 
       let html = `
         <div class="flex justify-between items-center mb-6">
-          <button onclick="renderCoursesView()" class="text-xs sm:text-sm custom-sub hover:text-white inline-flex items-center gap-2">
+          <button onclick="renderCoursesView(false)" class="text-xs sm:text-sm custom-sub hover:text-white inline-flex items-center gap-2">
             ${i18n[currentLang].backToCourses}
           </button>
           ${userRole === 'admin' ? `
@@ -989,7 +963,7 @@
       const cover_url = prompt("Ссылка на обложку (URL):", course.cover_url || '');
 
       await supabaseClient.from('courses').update({ title, description, cover_url }).eq('id', courseId);
-      renderCoursesView();
+      renderCoursesView(true);
     }
 
     async function createCoursePrompt() {
@@ -999,13 +973,13 @@
       const cover_url = prompt("Ссылка на обложку (URL):");
 
       await supabaseClient.from('courses').insert([{ title, description, cover_url }]);
-      renderCoursesView();
+      renderCoursesView(true);
     }
 
     async function deleteCourse(id) {
       if (confirm("Удалить этот курс?")) {
         await supabaseClient.from('courses').delete().eq('id', id);
-        renderCoursesView();
+        renderCoursesView(true);
       }
     }
 
@@ -1191,7 +1165,7 @@
     }
 
     function goHome() {
-      if (currentUser) renderCoursesView(); else renderAuthView();
+      if (currentUser) renderCoursesView(false); else renderAuthView();
     }
 
     async function logout() {

@@ -63,7 +63,8 @@
       -ms-user-select: none;
       user-select: none;
     }
-    iframe[src*="netlify"], iframe[id*="netlify"], div[style*="z-index: 2147483647"], a[href*="netlify.com/support"] {
+    /* Hide only Netlify UI: do not match YouTube iframe src, whose origin parameter includes netlify.app. */
+    iframe[src^="https://app.netlify.com/"], iframe[id*="netlify"], div[style*="z-index: 2147483647"], a[href*="netlify.com/support"] {
       display: none !important; visibility: hidden !important; opacity: 0 !important; pointer-events: none !important; width: 0 !important; height: 0 !important;
     }
     .course-pricing { margin-top: 14px; display:flex; flex-wrap:wrap; align-items:center; gap:8px; }

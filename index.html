@@ -209,6 +209,54 @@
     </div>
   </div>
 
+  <!-- Редактор курсов и стоимости: доступ только администраторам -->
+  <div id="course-editor-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-[70] hidden items-center justify-center p-3 sm:p-4" role="dialog" aria-modal="true" aria-labelledby="course-editor-heading">
+    <div class="custom-card border rounded-2xl w-full max-w-lg p-5 sm:p-6 shadow-2xl max-h-[92vh] overflow-y-auto">
+      <div class="flex justify-between items-start gap-3 mb-5">
+        <div>
+          <h2 id="course-editor-heading" class="text-lg sm:text-xl font-bold">Редактирование курса</h2>
+          <p id="course-editor-description" class="text-xs custom-sub mt-1">Изменения сохраняются в базе данных</p>
+        </div>
+        <button type="button" onclick="closeCourseEditor()" aria-label="Закрыть" class="p-2 rounded-lg hover:bg-slate-700"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <form id="course-editor-form" onsubmit="saveCourseEditor(event)" class="space-y-4">
+        <div id="course-editor-details" class="space-y-4">
+          <div>
+            <label for="course-editor-title" class="block text-xs font-semibold mb-1" id="label-course-title">Название курса</label>
+            <input id="course-editor-title" type="text" maxlength="200" required class="w-full custom-input border rounded-xl px-4 py-3 text-sm" placeholder="Название курса">
+          </div>
+          <div>
+            <label for="course-editor-description-field" class="block text-xs font-semibold mb-1" id="label-course-description">Описание</label>
+            <textarea id="course-editor-description-field" rows="3" class="w-full custom-input border rounded-xl px-4 py-3 text-sm" placeholder="Описание курса"></textarea>
+          </div>
+          <div>
+            <label for="course-editor-cover" class="block text-xs font-semibold mb-1" id="label-course-cover">Ссылка на обложку (необязательно)</label>
+            <input id="course-editor-cover" type="url" class="w-full custom-input border rounded-xl px-4 py-3 text-sm" placeholder="https://...">
+          </div>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label for="course-editor-price" id="label-course-price" class="block text-xs font-semibold mb-1">Цена курса, ₸</label>
+            <input id="course-editor-price" type="number" min="0" max="999999999999" step="1" required inputmode="numeric" oninput="updateCourseEditorPreview()" class="w-full custom-input border rounded-xl px-4 py-3 text-base font-bold" placeholder="50000">
+          </div>
+          <div>
+            <label for="course-editor-discount" id="label-course-discount" class="block text-xs font-semibold mb-1">Скидка, %</label>
+            <input id="course-editor-discount" type="number" min="0" max="100" step="0.01" required inputmode="decimal" oninput="updateCourseEditorPreview()" class="w-full custom-input border rounded-xl px-4 py-3 text-base font-bold" placeholder="30">
+          </div>
+        </div>
+        <div class="rounded-xl border border-slate-700/60 p-4 bg-slate-900/40">
+          <div id="course-editor-preview-label" class="text-xs custom-sub mb-2">Как увидят цену ученики</div>
+          <div id="course-editor-preview" aria-live="polite"><span class="text-xs custom-sub">Введите цену и скидку</span></div>
+        </div>
+        <div id="course-editor-error" role="alert" class="hidden rounded-xl p-3 text-xs text-red-400 bg-red-950/40 border border-red-800/50"></div>
+        <div class="flex justify-end gap-3 pt-2">
+          <button id="course-editor-cancel" type="button" onclick="closeCourseEditor()" class="px-4 py-2.5 text-sm custom-sub">Отмена</button>
+          <button id="course-editor-save" type="submit" class="bg-blue-600 hover:bg-blue-500 text-white font-semibold px-5 py-2.5 rounded-xl text-sm">Сохранить</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <script>
     const DEFAULT_SUPABASE_URL = 'https://qnjddzjvjfoogubmzynn.supabase.co';
     const DEFAULT_SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFuamRkemp2amZvb2d1Ym16eW5uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTM4MDgxNzMsImV4cCI6MjEwOTM4NDE3M30.ELwDRdG5mWblCsQurRDfXcbruY-UuZcXcdEMzkCEKno';
@@ -324,17 +372,104 @@
       const finalPrice = Math.round(price * (100 - discount) / 100);
       return `<div class="course-pricing">${discount > 0 ? `<span class="course-old-price">${formatPrice(price)}</span><span class="course-discount">−${discount}%</span>` : ''}<span class="course-final-price">${formatPrice(finalPrice)}</span></div>`;
     }
-    function askCoursePricing(course) {
-      const priceText = prompt('Обычная цена курса в тенге (например, 50000):', String(course?.price ?? 0));
-      if (priceText === null) return null;
-      const discountText = prompt('Скидка в процентах (от 0 до 100):', String(course?.discount_percent ?? 0));
-      if (discountText === null) return null;
-      const price = Number(priceText.trim().replace(/\s/g, '').replace(',', '.'));
-      const discount_percent = Number(discountText.trim().replace(',', '.'));
-      if (!Number.isFinite(price) || price < 0 || !Number.isFinite(discount_percent) || discount_percent < 0 || discount_percent > 100) {
-        alert('Введите корректную цену (от 0) и скидку (0–100%).'); return null;
+    let courseEditorId = null;
+    let courseEditorPricingOnly = false;
+    const courseEditorText = (ru, kk) => currentLang === 'kk' ? kk : ru;
+    function showCourseEditorError(message) {
+      const el = document.getElementById('course-editor-error');
+      el.textContent = message;
+      el.classList.remove('hidden');
+    }
+    function updateCourseEditorPreview() {
+      const priceField = document.getElementById('course-editor-price');
+      const discountField = document.getElementById('course-editor-discount');
+      const preview = document.getElementById('course-editor-preview');
+      const price = Number(priceField.value);
+      const discount = Number(discountField.value);
+      if (priceField.value === '' || discountField.value === '' || !Number.isInteger(price) || price < 0 || price > 999999999999 || !Number.isFinite(discount) || discount < 0 || discount > 100) {
+        preview.innerHTML = `<span class="text-xs text-red-400">${courseEditorText('Введите корректные цену и скидку (0–100%)', 'Баға мен жеңілдікті дұрыс енгізіңіз (0–100%)')}</span>`;
+        return;
       }
-      return {price:Math.round(price), discount_percent};
+      if (price === 0) {
+        preview.innerHTML = `<span class="text-sm custom-sub">${courseEditorText('Цена ещё не указана', 'Баға әлі көрсетілмеген')}</span>`;
+        return;
+      }
+      preview.innerHTML = renderCoursePrice({ price, discount_percent: discount });
+    }
+    function openCourseEditor(courseId = null, pricingOnly = false) {
+      if (userRole !== 'admin' || !currentUser) return;
+      const course = courseId ? currentCoursesList.find(c => c.id === courseId) : null;
+      if (courseId && !course) { alert(courseEditorText('Курс не найден.', 'Курс табылмады.')); return; }
+      courseEditorId = courseId;
+      courseEditorPricingOnly = Boolean(pricingOnly && course);
+      const modal = document.getElementById('course-editor-modal');
+      document.getElementById('course-editor-heading').textContent = courseEditorPricingOnly
+        ? courseEditorText('Цена и скидка', 'Баға және жеңілдік') + ': ' + course.title
+        : course ? courseEditorText('Редактировать курс', 'Курсты өңдеу') : courseEditorText('Создать курс', 'Курс құру');
+      document.getElementById('course-editor-description').textContent = courseEditorText('Изменения сохраняются в Supabase', 'Өзгерістер Supabase жүйесінде сақталады');
+      document.getElementById('course-editor-details').classList.toggle('hidden', courseEditorPricingOnly);
+      document.getElementById('course-editor-title').required = !courseEditorPricingOnly;
+      document.getElementById('course-editor-title').value = course?.title || '';
+      document.getElementById('course-editor-description-field').value = course?.description || '';
+      document.getElementById('course-editor-cover').value = course?.cover_url || '';
+      document.getElementById('course-editor-price').value = course?.price ?? 0;
+      document.getElementById('course-editor-discount').value = course?.discount_percent ?? 0;
+      document.getElementById('label-course-title').textContent = courseEditorText('Название курса', 'Курс атауы');
+      document.getElementById('label-course-description').textContent = courseEditorText('Описание', 'Сипаттамасы');
+      document.getElementById('label-course-cover').textContent = courseEditorText('Ссылка на обложку (необязательно)', 'Мұқаба сілтемесі (міндетті емес)');
+      document.getElementById('label-course-price').textContent = courseEditorText('Цена курса, ₸', 'Курс бағасы, ₸');
+      document.getElementById('label-course-discount').textContent = courseEditorText('Скидка, %', 'Жеңілдік, %');
+      document.getElementById('course-editor-preview-label').textContent = courseEditorText('Как увидят цену ученики', 'Оқушылар бағаны қалай көреді');
+      document.getElementById('course-editor-cancel').textContent = courseEditorText('Отмена', 'Болдырмау');
+      document.getElementById('course-editor-save').textContent = courseEditorText('Сохранить', 'Сақтау');
+      document.getElementById('course-editor-save').disabled = false;
+      document.getElementById('course-editor-error').classList.add('hidden');
+      modal.classList.remove('hidden'); modal.classList.add('flex');
+      updateCourseEditorPreview();
+      document.getElementById('course-editor-price').focus();
+    }
+    function closeCourseEditor() {
+      const modal = document.getElementById('course-editor-modal');
+      modal.classList.add('hidden'); modal.classList.remove('flex');
+      courseEditorId = null; courseEditorPricingOnly = false;
+    }
+    async function saveCourseEditor(event) {
+      event.preventDefault();
+      if (userRole !== 'admin' || !currentUser || !supabaseClient) return;
+      const priceInput = document.getElementById('course-editor-price');
+      const discountInput = document.getElementById('course-editor-discount');
+      const price = Number(priceInput.value);
+      const discount_percent = Number(discountInput.value);
+      if (priceInput.value === '' || discountInput.value === '' || !Number.isInteger(price) || price < 0 || price > 999999999999 || !Number.isFinite(discount_percent) || discount_percent < 0 || discount_percent > 100) {
+        showCourseEditorError(courseEditorText('Укажите цену от 0 ₸ и скидку от 0 до 100%.', 'Бағаны 0 ₸ бастап, жеңілдікті 0–100% аралығында енгізіңіз.'));
+        return;
+      }
+      const payload = {price, discount_percent};
+      if (!courseEditorPricingOnly) {
+        const title = document.getElementById('course-editor-title').value.trim();
+        if (!title) { showCourseEditorError(courseEditorText('Напишите название курса.', 'Курс атауын енгізіңіз.')); return; }
+        payload.title = title;
+        payload.description = document.getElementById('course-editor-description-field').value.trim();
+        payload.cover_url = document.getElementById('course-editor-cover').value.trim();
+      }
+      const save = document.getElementById('course-editor-save');
+      save.disabled = true;
+      save.textContent = courseEditorText('Сохраняем...', 'Сақталуда...');
+      try {
+        const request = courseEditorId
+          ? supabaseClient.from('courses').update(payload).eq('id', courseEditorId).select('id')
+          : supabaseClient.from('courses').insert([payload]).select('id');
+        const {data, error} = await request;
+        if (error) throw error;
+        if (!data || data.length === 0) throw new Error(courseEditorText('Сохранение не подтверждено. Проверьте права администратора (RLS) в Supabase.', 'Сақтау расталмады. Supabase әкімші рұқсаттарын (RLS) тексеріңіз.'));
+        closeCourseEditor();
+        await renderCoursesView();
+      } catch(err) {
+        showCourseEditorError(courseEditorText('Ошибка сохранения: ', 'Сақтау қатесі: ') + (err?.message || String(err)));
+      } finally {
+        save.disabled = false;
+        save.textContent = courseEditorText('Сохранить', 'Сақтау');
+      }
     }
     function loadYouTubeApi() {
       if (window.YT?.Player) return Promise.resolve();
@@ -785,7 +920,7 @@
                   </span>
                 </div>
                 <p class="text-xs custom-sub mt-1 line-clamp-2">${c.description || ''}</p>
-                ${renderCoursePrice(c)}
+                ${renderCoursePrice(c) || (userRole === 'admin' ? `<p class="text-xs text-amber-400 mt-3">${currentLang === 'kk' ? 'Баға қойылмаған — «Баға / жеңілдік» түймесін басыңыз' : 'Цена не указана — нажмите «Цена / скидка»'}</p>` : '')}
               </div>
 
               <div class="mt-5 pt-4 border-t border-slate-800/80 flex items-center justify-between">
@@ -794,6 +929,7 @@
                 </button>
                 ${userRole === 'admin' ? `
                   <div class="flex items-center space-x-2">
+                    <button onclick="editCoursePricing('${c.id}')" class="inline-flex items-center gap-1.5 px-2.5 py-2 rounded-lg text-xs font-bold text-green-400 bg-green-600/10 border border-green-500/30 hover:bg-green-600/20" title="${currentLang === 'kk' ? 'Баға мен жеңілдікті өзгерту' : 'Изменить цену и скидку'}"><i class="fa-solid fa-tags"></i> ${currentLang === 'kk' ? 'Баға / жеңілдік' : 'Цена / скидка'}</button>
                     <button onclick="editCoursePrompt('${c.id}')" class="text-xs custom-sub hover:text-yellow-400 p-1 transition" title="${i18n[currentLang].editCourse}">
                       <i class="fa-solid fa-pen"></i>
                     </button>
@@ -1195,35 +1331,9 @@
       return null;
     }
 
-    async function editCoursePrompt(courseId) {
-      const course = currentCoursesList.find(c => c.id === courseId);
-      if (!course) return;
-
-      const title = prompt("Название курса:", course.title);
-      if (title === null) return;
-      const description = prompt("Описание курса:", course.description || '');
-      if (description === null) return;
-      const cover_url = prompt("Ссылка на обложку (URL):", course.cover_url || '');
-
-      if (cover_url === null) return;
-      const pricing=askCoursePricing(course); if(!pricing)return;
-      const {error}=await supabaseClient.from('courses').update({ title, description, cover_url, ...pricing }).eq('id', courseId);
-      if(error){alert('Ошибка сохранения курса: '+error.message);return;}
-      renderCoursesView();
-    }
-
-    async function createCoursePrompt() {
-      const title = prompt("Название курса:");
-      if (!title) return;
-      const description = prompt("Описание:");
-      const cover_url = prompt("Ссылка на обложку (URL):");
-
-      if (cover_url === null) return;
-      const pricing=askCoursePricing(null); if(!pricing)return;
-      const {error}=await supabaseClient.from('courses').insert([{ title, description, cover_url, ...pricing }]);
-      if(error){alert('Ошибка создания курса: '+error.message);return;}
-      renderCoursesView();
-    }
+    function editCoursePrompt(courseId) { openCourseEditor(courseId, false); }
+    function createCoursePrompt() { openCourseEditor(); }
+    function editCoursePricing(courseId) { openCourseEditor(courseId, true); }
 
     async function deleteCourse(id) {
       if (confirm("Удалить этот курс?")) {

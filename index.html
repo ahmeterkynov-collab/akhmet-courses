@@ -91,7 +91,7 @@
           <button onclick="setLanguage('kk')" id="lang-btn-kk" class="px-2 py-0.5 sm:py-1 rounded-md transition-all">KK</button>
         </div>
 
-        <button id="db-config-btn" onclick="openConfigModal()" class="hidden p-1.5 sm:p-2 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition" title="Настройки БД">
+        <button id="db-config-btn" onclick="openConfigModal()" class="p-1.5 sm:p-2 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition" title="Настройки БД">
           <i class="fa-solid fa-database text-xs sm:text-sm"></i>
         </button>
 
@@ -197,7 +197,6 @@
   </div>
 
   <script>
-    // Жестко прописываем ключи, переданные пользователем
     const DEFAULT_SUPABASE_URL = 'https://qnjddzjvjfoogubmzynn.supabase.co';
     const DEFAULT_SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFuamRkemp2amZvb2d1Ym16eW5uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTM4MDgxNzMsImV4cCI6MjEwOTM4NDE3M30.ELwDRdG5mWblCsQurRDfXcbruY-UuZcXcdEMzkCEKno';
 
@@ -432,12 +431,8 @@
     }
 
     function initSupabase() {
-      // ПРИНУДИТЕЛЬНАЯ ОЧИСТКА КЭША. Чтобы старые (неверные) ключи из памяти удалились.
-      localStorage.removeItem('supabase_url');
-      localStorage.removeItem('supabase_key');
-      
-      const url = DEFAULT_SUPABASE_URL;
-      const key = DEFAULT_SUPABASE_KEY;
+      const url = localStorage.getItem('supabase_url') || DEFAULT_SUPABASE_URL;
+      const key = localStorage.getItem('supabase_key') || DEFAULT_SUPABASE_KEY;
 
       if (url && key && window.supabase) {
         try {
@@ -521,10 +516,7 @@
 
     function updateUserMenu(name) {
       const menu = document.getElementById('user-menu');
-      
-      // Кнопку "Настройки БД" мы скрываем полностью, чтобы больше ничего не сломалось
       const dbBtn = document.getElementById('db-config-btn');
-      if (dbBtn) dbBtn.style.display = 'none';
 
       if (name) {
         menu.classList.remove('hidden');
@@ -535,12 +527,15 @@
         if (userRole === 'admin') {
           badge.innerText = i18n[currentLang].adminRole;
           badge.className = 'text-[9px] sm:text-[10px] px-1.5 py-0.5 rounded-full font-bold uppercase bg-blue-600/20 text-blue-400 border border-blue-500/40';
+          if (dbBtn) dbBtn.classList.remove('hidden');
         } else {
           badge.innerText = i18n[currentLang].studentRole;
           badge.className = 'text-[9px] sm:text-[10px] px-1.5 py-0.5 rounded-full font-semibold uppercase bg-slate-800 text-slate-400 border border-slate-700';
+          if (dbBtn) dbBtn.classList.add('hidden');
         }
       } else {
         menu.classList.add('hidden');
+        if (dbBtn) dbBtn.classList.add('hidden');
       }
     }
 
@@ -633,7 +628,7 @@
 
       const { data: courses, error } = await supabaseClient.from('courses').select('*').order('created_at', { ascending: false });
       if (error) {
-          container.innerHTML = `<div class="text-center py-12 text-red-500">Ошибка загрузки курсов: ${error.message}</div>`;
+          container.innerHTML = `<div class="text-center py-12 text-red-400">Ошибка загрузки курсов: ${error.message}</div>`;
           return;
       }
       currentCoursesList = courses || [];
@@ -989,11 +984,15 @@
       list.innerHTML = `<div class="text-center py-6 text-slate-500"><i class="fa-solid fa-spinner fa-spin text-xl"></i></div>`;
       document.getElementById('students-modal').classList.remove('hidden');
 
-      const { data: students } = await supabaseClient
+      const { data: students, error } = await supabaseClient
         .from('profiles')
         .select('*')
-        .eq('role', 'student')
         .order('created_at', { ascending: false });
+
+      if (error) {
+        list.innerHTML = `<div class="text-center py-6 text-red-400">Ошибка: ${error.message}</div>`;
+        return;
+      }
 
       allStudentsData = students || [];
       renderFilteredStudents(allStudentsData);
@@ -1020,12 +1019,15 @@
 
       list.innerHTML = students.map(s => {
         const studentAccesses = allAccess ? allAccess.filter(a => a.user_id === s.id) : [];
+        const isUserAdmin = s.role === 'admin';
         
         return `
           <div class="p-4 custom-input border rounded-xl space-y-3">
-            <div>
-              <div class="text-sm font-bold">${s.full_name || 'Без имени'}</div>
-              <div class="text-xs custom-sub">${s.email || ''}</div>
+            <div class="flex justify-between items-start">
+              <div>
+                <div class="text-sm font-bold">${s.full_name || 'Без имени'} ${isUserAdmin ? '<span class="text-blue-400 text-xs">(Админ)</span>' : ''}</div>
+                <div class="text-xs custom-sub">${s.email || ''}</div>
+              </div>
             </div>
             
             <div class="pt-2 border-t border-slate-700/50">
@@ -1059,7 +1061,12 @@
       if (currentActive) {
         await supabaseClient.from('course_access').delete().match({ user_id: studentId, course_id: courseId });
       } else {
-        const choice = prompt("Выберите срок доступа к этому курсу:\n1 - 1 месяц\n3 - 3 месяца\n6 - 6 месяцев\n12 - 12 месяцев\n0 или пусто - Без ограничений", "6");
+        const choice = prompt("Выберите срок доступа к этому курсу:
+1 - 1 месяц
+3 - 3 месяца
+6 - 6 месяцев
+12 - 12 месяцев
+0 или пусто - Без ограничений", "6");
         if (choice === null) return;
 
         let months = parseInt(choice);
@@ -1106,7 +1113,9 @@
       const { error } = await supabaseClient.from('lessons').insert([lessonData]);
       if (error) {
          if (error.message.includes('attachments')) {
-             alert('Внимание! В базе данных Supabase (таблица "lessons") нет колонки "attachments". Видеоурок сейчас будет сохранен БЕЗ файла.\n\nЧтобы файлы заработали, зайдите в Supabase и создайте колонку "attachments" с типом данных "JSONB".');
+             alert('Внимание! В базе данных Supabase (таблица "lessons") нет колонки "attachments". Видеоурок сейчас будет сохранен БЕЗ файла.
+
+Чтобы файлы заработали, зайдите в Supabase и создайте колонку "attachments" с типом данных "JSONB".');
              delete lessonData.attachments;
              await supabaseClient.from('lessons').insert([lessonData]);
          } else {
@@ -1144,7 +1153,9 @@
       const { error } = await supabaseClient.from('lessons').update(lessonData).eq('id', lessonId);
       if (error) {
          if (error.message.includes('attachments')) {
-             alert('Внимание! В базе данных Supabase (таблица "lessons") нет колонки "attachments". Видеоурок обновлен БЕЗ файла.\n\nЧтобы файлы заработали, зайдите в Supabase и создайте колонку "attachments" с типом данных "JSONB".');
+             alert('Внимание! В базе данных Supabase (таблица "lessons") нет колонки "attachments". Видеоурок обновлен БЕЗ файла.
+
+Чтобы файлы заработали, зайдите в Supabase и создайте колонку "attachments" с типом данных "JSONB".');
              delete lessonData.attachments;
              await supabaseClient.from('lessons').update(lessonData).eq('id', lessonId);
          } else {
@@ -1186,10 +1197,21 @@
     }
 
     function openConfigModal() { 
-      // Функция оставлена пустой, так как настройки теперь жестко вшиты
+      document.getElementById('supabase-url').value = localStorage.getItem('supabase_url') || DEFAULT_SUPABASE_URL;
+      document.getElementById('supabase-key').value = localStorage.getItem('supabase_key') || DEFAULT_SUPABASE_KEY;
+      document.getElementById('config-modal').classList.remove('hidden'); 
     }
     function closeConfigModal() { document.getElementById('config-modal').classList.add('hidden'); }
     
+    async function saveSupabaseConfig() {
+      const url = document.getElementById('supabase-url').value.trim();
+      const key = document.getElementById('supabase-key').value.trim();
+      localStorage.setItem('supabase_url', url);
+      localStorage.setItem('supabase_key', key);
+      closeConfigModal();
+      initSupabase();
+    }
+
     function goHome() {
       if (currentUser) renderCoursesView(); else renderAuthView();
     }

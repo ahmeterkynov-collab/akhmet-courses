@@ -23,9 +23,15 @@
       -ms-user-select: none;
       user-select: none;
     }
-    /* Скрываем плашку Netlify в углу */
-    #netlify-badge, iframe[src*="netlify"] {
+    /* Жесткое скрытие любых элементов и виджетов Netlify в углах экрана */
+    iframe[src*="netlify"], 
+    iframe[id*="netlify"], 
+    div[style*="z-index: 2147483647"],
+    a[href*="netlify.com/support"] {
       display: none !important;
+      visibility: hidden !important;
+      opacity: 0 !important;
+      pointer-events: none !important;
     }
   </style>
 </head>

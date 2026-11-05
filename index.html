@@ -470,7 +470,6 @@
 
       let html = ``;
 
-      // Если у ученика не активирован доступ — показываем баннер с уведомлением и кнопкой WhatsApp сверху
       if (userRole !== 'admin' && !userIsActive) {
         const waText = encodeURIComponent("Саламатсыз ба! Мен платформаға тіркелдім, курсты ашып бересіз бе?");
         const waUrl = `https://wa.me/77013087711?text=${waText}`;
@@ -601,7 +600,6 @@
         return;
       }
 
-      // Если у ученика нет доступа, показываем список уроков (заголовки видно), но при попытке открыть плеер или видео выйдет уведомление
       if (userRole !== 'admin' && !userIsActive) {
         renderLockedCourseView(courseId, container);
         return;
@@ -678,7 +676,6 @@
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
           <div class="lg:col-span-2 space-y-6">
-            <!-- Видеоплеер с динамическим водяным знаком -->
             <div class="bg-black rounded-2xl overflow-hidden aspect-video border border-slate-800 shadow-2xl relative group">
               <div class="absolute top-4 left-4 z-20 pointer-events-none text-[10px] sm:text-xs font-mono text-white/30 bg-black/40 px-2 py-1 rounded select-none">
                 ${watermarkText}
@@ -688,7 +685,6 @@
                 `<video src="${activeLesson.video_url}" controls class="w-full h-full"></video>`}
             </div>
 
-            <!-- Урок инфо -->
             <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-4">
               <div class="flex flex-wrap items-center justify-between gap-3">
                 <h2 class="text-lg sm:text-xl font-bold text-white">${activeLesson.title}</h2>
@@ -700,7 +696,6 @@
               <p class="text-xs sm:text-sm text-slate-400 leading-relaxed">${activeLesson.description || ''}</p>
             </div>
 
-            <!-- Скачиваемые материалы -->
             ${attachmentsList.length > 0 ? `
               <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5">
                 <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-2">
@@ -723,7 +718,6 @@
             ` : ''}
           </div>
 
-          <!-- Список уроков -->
           <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 h-fit">
             <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4 px-2">Список уроков</h3>
             <div class="space-y-2">
@@ -932,7 +926,7 @@
       if (!video_url) return;
       const description = prompt("Описание урока:");
       
-      file_name = prompt("Название скачиваемого файла (необязательно):");
+      const file_name = prompt("Название скачиваемого файла (необязательно):");
       const file_url = file_name ? prompt("Ссылка на скачиваемый файл (Google Drive / PDF / Excel):") : null;
       
       const attachments = (file_name && file_url) ? [{ name: file_name, url: file_url }] : [];
@@ -999,7 +993,7 @@
     }
     function closeConfigModal() { document.getElementById('config-modal').classList.add('hidden'); }
     
-    , saveSupabaseConfig() {
+    function saveSupabaseConfig() {
       const url = document.getElementById('supabase-url').value.trim();
       const key = document.getElementById('supabase-key').value.trim();
       localStorage.setItem('supabase_url', url);

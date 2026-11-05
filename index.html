@@ -199,6 +199,8 @@
   <script>
     const DEFAULT_SUPABASE_URL = 'https://qnjddzjvjfoogubmzynn.supabase.co';
     const DEFAULT_SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFuamRkemp2amZvb2d1Ym16eW5uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTM4MDgxNzMsImV4cCI6MjEwOTM4NDE3M30.ELwDRdG5mWblCsQurRDfXcbruY-UuZcXcdEMzkCEKno';
+    const LESSON_FILES_BUCKET = 'lesson-materials';
+    const MAX_LESSON_FILE_SIZE = 25 * 1024 * 1024; // 25 MB per file
 
     const i18n = {
       ru: {
@@ -734,25 +736,8 @@
       const container = document.getElementById('app-content');
       container.innerHTML = `<div class="text-center py-12 text-slate-500"><i class="fa-solid fa-spinner fa-spin text-2xl"></i></div>`;
 
-     const { data: lessons, error: lessonsError } = await supabaseClient
-  .from('lessons')
-  .select('*')
-  .eq('course_id', courseId)
-  .order('position', { ascending: true });
-
-if (lessonsError) {
-    console.error('Ошибка загрузки уроков:', lessonsError);
-
-    container.innerHTML =
-      '<div class="text-center py-8 text-red-400" id="lesson-load-error"></div>';
-
-    container.querySelector('#lesson-load-error').textContent =
-      'Ошибка загрузки уроков: ' + lessonsError.message;
-
-    return;
-}
-
-currentCourseLessons = lessons || [];
+      const { data: lessons } = await supabaseClient.from('lessons').select('*').eq('course_id', courseId).order('position', { ascending: true });
+      currentCourseLessons = lessons || [];
 
       const hasAccess = userRole === 'admin' || !!userCourseAccessMap[courseId];
 
@@ -824,16 +809,72 @@ currentCourseLessons = lessons || [];
       `;
     }
 
+    function normalizeAttachmentList(value) {
+      if (typeof value === 'string') {
+        try { value = JSON.parse(value); } catch (e) { value = []; }
+      }
+      return Array.isArray(value) ? value.filter(item => item && typeof item === 'object') : [];
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? '').replace(/[&<>"']/g, ch => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+      }[ch]));
+    }
+
+    function getAttachmentIcon(fileName) {
+      const ext = String(fileName || '').split('.').pop().toLowerCase();
+      if (ext === 'pdf') return 'fa-file-pdf text-red-400';
+      if (['doc', 'docx'].includes(ext)) return 'fa-file-word text-blue-400';
+      if (['xls', 'xlsx', 'csv'].includes(ext)) return 'fa-file-excel text-green-400';
+      if (['ppt', 'pptx'].includes(ext)) return 'fa-file-powerpoint text-orange-400';
+      if (['jpg', 'jpeg', 'png'].includes(ext)) return 'fa-file-image text-purple-400';
+      return 'fa-file-lines text-blue-400';
+    }
+
     async function renderLessonDetailsView(activeLesson, courseId, container) {
       const embedUrl = getEmbedUrl(activeLesson.video_url);
       const isCompleted = !!userProgressMap[activeLesson.id];
-
-      let attachmentsList = activeLesson.attachments || [];
-      if (typeof attachmentsList === 'string') {
-        try { attachmentsList = JSON.parse(attachmentsList); } catch(e) { attachmentsList = []; }
-      }
-
+      const attachmentsList = normalizeAttachmentList(activeLesson.attachments);
       const watermarkText = `Смотрит: ${userFullName} (${currentUser?.email || ''})`;
+
+      // Files uploaded to the private Storage bucket are displayed through temporary signed URLs.
+      const attachmentRows = await Promise.all(attachmentsList.map(async (file, index) => {
+        let fileUrl = file.url || '';
+        let linkError = false;
+
+        if (file.path) {
+          const bucket = file.bucket || LESSON_FILES_BUCKET;
+          const { data, error } = await supabaseClient.storage
+            .from(bucket)
+            .createSignedUrl(file.path, 60 * 60);
+          if (error || !data?.signedUrl) {
+            linkError = true;
+            console.error('Не удалось получить ссылку на файл:', error);
+          } else {
+            fileUrl = data.signedUrl;
+          }
+        }
+
+        const name = escapeHtml(file.name || i18n[currentLang].downloadFile);
+        const icon = getAttachmentIcon(file.name);
+        const sizeLabel = file.size ? ` · ${(file.size / 1024 / 1024).toFixed(2)} МБ` : '';
+        const linkContent = fileUrl && !linkError
+          ? `<a href="${escapeHtml(fileUrl)}" target="_blank" rel="noopener noreferrer" class="min-w-0 flex-grow flex items-center gap-3">
+               <div class="w-9 h-9 rounded-lg bg-blue-600/10 flex items-center justify-center flex-shrink-0"><i class="fa-solid ${icon} text-lg"></i></div>
+               <div class="min-w-0 flex-grow"><div class="text-xs font-semibold truncate">${name}</div><div class="text-[10px] custom-sub">Жүктеу / Скачать${sizeLabel}</div></div>
+               <i class="fa-solid fa-download text-xs custom-sub"></i>
+             </a>`
+          : `<div class="min-w-0 flex-grow flex items-center gap-3 opacity-60">
+               <div class="w-9 h-9 rounded-lg bg-slate-500/10 flex items-center justify-center flex-shrink-0"><i class="fa-solid ${icon} text-lg"></i></div>
+               <div class="min-w-0"><div class="text-xs font-semibold truncate">${name}</div><div class="text-[10px] text-red-400">Файл недоступен. Проверьте Storage-политики.</div></div>
+             </div>`;
+
+        return `<div class="p-3 custom-input border rounded-xl flex items-center gap-2">
+          ${linkContent}
+          ${userRole === 'admin' ? `<button onclick="removeLessonAttachment('${activeLesson.id}', '${courseId}', ${index})" class="p-2 text-slate-500 hover:text-red-400" title="Удалить файл"><i class="fa-solid fa-trash text-xs"></i></button>` : ''}
+        </div>`;
+      }));
 
       let html = `
         <div class="flex justify-between items-center mb-6">
@@ -858,15 +899,13 @@ currentCourseLessons = lessons || [];
               <div class="absolute top-4 left-4 z-20 pointer-events-none text-[10px] sm:text-xs font-mono text-white/30 bg-black/40 px-2 py-1 rounded select-none">
                 ${watermarkText}
               </div>
-              
-              ${embedUrl ? `<iframe src="${embedUrl}" class="w-full h-full" allowfullscreen allow="autoplay"></iframe>` : 
+              ${embedUrl ? `<iframe src="${embedUrl}" class="w-full h-full" allowfullscreen allow="autoplay"></iframe>` :
                 `<video src="${activeLesson.video_url}" controls class="w-full h-full"></video>`}
             </div>
 
             <div class="custom-card border rounded-2xl p-5 space-y-4">
               <div class="flex flex-wrap items-center justify-between gap-3">
                 <h2 class="text-lg sm:text-xl font-bold">${activeLesson.title}</h2>
-                
                 ${userRole !== 'admin' ? `
                   <button onclick="toggleLessonProgress('${activeLesson.id}', '${courseId}')" class="px-3.5 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 transition ${isCompleted ? 'bg-green-600/20 text-green-400 border border-green-500/40' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}">
                     <i class="fa-solid ${isCompleted ? 'fa-circle-check text-green-400' : 'fa-circle'}"></i>
@@ -877,24 +916,22 @@ currentCourseLessons = lessons || [];
               <p class="text-xs sm:text-sm custom-sub leading-relaxed">${activeLesson.description || ''}</p>
             </div>
 
-            ${attachmentsList.length > 0 ? `
+            ${(attachmentsList.length > 0 || userRole === 'admin') ? `
               <div class="custom-card border rounded-2xl p-5">
-                <h3 class="text-xs font-bold custom-sub uppercase tracking-wider mb-3 flex items-center gap-2">
-                  <i class="fa-solid fa-file-arrow-down text-blue-400"></i> ${i18n[currentLang].materialsTitle}
-                </h3>
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  ${attachmentsList.map(file => `
-                    <a href="${file.url}" target="_blank" class="p-3 custom-input border hover:border-blue-500/50 rounded-xl flex items-center gap-3 transition group">
-                      <div class="w-8 h-8 rounded-lg bg-blue-600/20 text-blue-400 flex items-center justify-center font-bold text-xs flex-shrink-0">
-                        <i class="fa-solid fa-file"></i>
-                      </div>
-                      <div class="min-w-0 flex-grow">
-                        <div class="text-xs font-semibold truncate">${file.name || i18n[currentLang].downloadFile}</div>
-                      </div>
-                      <i class="fa-solid fa-download text-xs custom-sub"></i>
-                    </a>
-                  `).join('')}
+                <div class="flex flex-wrap items-center justify-between gap-3 mb-3">
+                  <h3 class="text-xs font-bold custom-sub uppercase tracking-wider flex items-center gap-2">
+                    <i class="fa-solid fa-file-arrow-down text-blue-400"></i> ${i18n[currentLang].materialsTitle}
+                  </h3>
+                  ${userRole === 'admin' ? `
+                    <button onclick="uploadLessonFiles('${activeLesson.id}', '${courseId}')" class="bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold px-3 py-2 rounded-lg flex items-center gap-2">
+                      <i class="fa-solid fa-paperclip"></i> Прикрепить файл
+                    </button>
+                  ` : ''}
                 </div>
+                ${attachmentsList.length > 0
+                  ? `<div class="grid grid-cols-1 sm:grid-cols-2 gap-3">${attachmentRows.join('')}</div>`
+                  : `<p class="text-xs custom-sub">Пока нет прикреплённых документов.</p>`}
+                ${userRole === 'admin' ? `<p class="text-[10px] custom-sub mt-3">Можно выбрать несколько файлов: DOC, DOCX, XLS, XLSX, PDF, PPT, PPTX, TXT, CSV и изображения. Максимум 25 МБ на один файл.</p>` : ''}
               </div>
             ` : ''}
           </div>
@@ -913,12 +950,8 @@ currentCourseLessons = lessons || [];
                     </div>
                     <div class="flex items-center space-x-1.5 flex-shrink-0">
                       ${userRole === 'admin' ? `
-                        <button onclick="editLessonPrompt('${l.id}', '${courseId}')" class="custom-sub hover:text-yellow-400 p-1" title="Редактировать">
-                          <i class="fa-solid fa-pen text-xs"></i>
-                        </button>
-                        <button onclick="deleteLesson('${l.id}', '${courseId}')" class="custom-sub hover:text-red-400 p-1" title="Удалить">
-                          <i class="fa-solid fa-trash text-xs"></i>
-                        </button>
+                        <button onclick="editLessonPrompt('${l.id}', '${courseId}')" class="custom-sub hover:text-yellow-400 p-1" title="Редактировать"><i class="fa-solid fa-pen text-xs"></i></button>
+                        <button onclick="deleteLesson('${l.id}', '${courseId}')" class="custom-sub hover:text-red-400 p-1" title="Удалить"><i class="fa-solid fa-trash text-xs"></i></button>
                       ` : ''}
                     </div>
                   </div>
@@ -930,6 +963,125 @@ currentCourseLessons = lessons || [];
       `;
 
       container.innerHTML = html;
+    }
+
+    async function uploadLessonFiles(lessonId, courseId) {
+      if (userRole !== 'admin' || !supabaseClient || !currentUser) {
+        alert('Прикреплять файлы может только администратор.');
+        return;
+      }
+
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.multiple = true;
+      input.accept = '.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.jpg,.jpeg,.png';
+      input.onchange = async () => {
+        const files = Array.from(input.files || []);
+        if (!files.length) return;
+
+        const allowed = new Set(['pdf','doc','docx','xls','xlsx','ppt','pptx','txt','csv','jpg','jpeg','png']);
+        for (const file of files) {
+          const ext = file.name.includes('.') ? file.name.split('.').pop().toLowerCase() : '';
+          if (!allowed.has(ext)) {
+            alert(`Формат файла «${file.name}» не поддерживается.`);
+            return;
+          }
+          if (file.size > MAX_LESSON_FILE_SIZE) {
+            alert(`Файл «${file.name}» превышает ограничение 25 МБ.`);
+            return;
+          }
+        }
+
+        const { data: lesson, error: loadError } = await supabaseClient
+          .from('lessons').select('attachments').eq('id', lessonId).single();
+        if (loadError) {
+          alert('Не удалось прочитать вложения урока: ' + loadError.message + '\nПроверьте колонку attachments в таблице lessons.');
+          return;
+        }
+
+        const attachments = normalizeAttachmentList(lesson.attachments);
+        const uploadedPaths = [];
+        const mimeByExt = {
+          pdf: 'application/pdf', doc: 'application/msword',
+          docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+          xls: 'application/vnd.ms-excel',
+          xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          ppt: 'application/vnd.ms-powerpoint',
+          pptx: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+          txt: 'text/plain', csv: 'text/csv', jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png'
+        };
+
+        try {
+          for (const file of files) {
+            const ext = file.name.split('.').pop().toLowerCase();
+            const safeName = file.name.normalize('NFKD').replace(/[^a-zA-Z0-9._-]+/g, '_').replace(/^_+|_+$/g, '') || `file.${ext}`;
+            const unique = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : `${Date.now()}_${Math.random().toString(36).slice(2)}`;
+            const path = `${courseId}/${lessonId}/${unique}_${safeName}`;
+            const contentType = file.type || mimeByExt[ext] || 'application/octet-stream';
+            const { error: uploadError } = await supabaseClient.storage
+              .from(LESSON_FILES_BUCKET)
+              .upload(path, file, { cacheControl: '3600', upsert: false, contentType });
+            if (uploadError) throw uploadError;
+            uploadedPaths.push(path);
+            attachments.push({
+              name: file.name,
+              path,
+              bucket: LESSON_FILES_BUCKET,
+              size: file.size,
+              type: contentType,
+              uploaded_at: new Date().toISOString()
+            });
+          }
+
+          const { error: saveError } = await supabaseClient
+            .from('lessons').update({ attachments }).eq('id', lessonId);
+          if (saveError) throw saveError;
+
+          alert(`Успешно прикреплено файлов: ${files.length}.`);
+          await openCourse(courseId, false);
+        } catch (error) {
+          if (uploadedPaths.length) {
+            await supabaseClient.storage.from(LESSON_FILES_BUCKET).remove(uploadedPaths);
+          }
+          console.error('Ошибка прикрепления файлов:', error);
+          alert('Не удалось прикрепить файл: ' + (error.message || error) + '\n\nПроверьте SQL-настройки колонки attachments, Storage bucket и политики доступа.');
+        }
+      };
+      input.click();
+    }
+
+    async function removeLessonAttachment(lessonId, courseId, attachmentIndex) {
+      if (userRole !== 'admin') return;
+      if (!confirm('Удалить прикреплённый файл?')) return;
+
+      const { data: lesson, error: loadError } = await supabaseClient
+        .from('lessons').select('attachments').eq('id', lessonId).single();
+      if (loadError) {
+        alert('Не удалось прочитать вложения: ' + loadError.message);
+        return;
+      }
+
+      const attachments = normalizeAttachmentList(lesson.attachments);
+      const file = attachments[attachmentIndex];
+      if (!file) return;
+
+      if (file.path) {
+        const { error: removeError } = await supabaseClient.storage
+          .from(file.bucket || LESSON_FILES_BUCKET).remove([file.path]);
+        if (removeError) {
+          alert('Не удалось удалить файл из хранилища: ' + removeError.message);
+          return;
+        }
+      }
+
+      attachments.splice(attachmentIndex, 1);
+      const { error: saveError } = await supabaseClient
+        .from('lessons').update({ attachments }).eq('id', lessonId);
+      if (saveError) {
+        alert('Файл удалён из хранилища, но список вложений не обновлён: ' + saveError.message);
+        return;
+      }
+      await openCourse(courseId, false);
     }
 
     function switchActiveLesson(lessonId, courseId) {
@@ -1103,36 +1255,23 @@ currentCourseLessons = lessons || [];
 
     async function addLessonPrompt(courseId) {
       const title = prompt("Название урока:");
-      if (!title) return;
+      if (!title || !title.trim()) return;
       const video_url = prompt("Ссылка на видео (YouTube / Drive / MP4):");
-      if (!video_url) return;
-      const description = prompt("Описание урока:");
-      
-      const file_name = prompt("Название прикрепляемого файла / документа (необязательно, например: Инструкция.pdf):");
-      let attachments = [];
-      if (file_name) {
-        const file_url = prompt("Ссылка на файл (Google Drive / прямая ссылка):");
-        if (file_url) {
-          attachments.push({ name: file_name, url: file_url });
-        }
-      }
+      if (!video_url || !video_url.trim()) return;
+      const description = prompt("Описание урока:") || '';
 
-      let lessonData = { course_id: courseId, title, video_url, description };
-      if (attachments.length > 0) {
-         lessonData.attachments = attachments;
-      }
+      const { error } = await supabaseClient.from('lessons').insert([{
+        course_id: courseId,
+        title: title.trim(),
+        video_url: video_url.trim(),
+        description
+      }]);
 
-      const { error } = await supabaseClient.from('lessons').insert([lessonData]);
       if (error) {
-         if (error.message.includes('attachments')) {
-             alert('Внимание! В базе данных Supabase (таблица "lessons") нет колонки "attachments". Видеоурок сейчас будет сохранен БЕЗ файла.\n\nЧтобы файлы заработали, зайдите в Supabase и создайте колонку "attachments" с типом данных "JSONB".');
-             delete lessonData.attachments;
-             await supabaseClient.from('lessons').insert([lessonData]);
-         } else {
-             alert("Ошибка при сохранении: " + error.message);
-         }
+        alert("Ошибка при сохранении урока: " + error.message);
+        return;
       }
-      openCourse(courseId, false);
+      await openCourse(courseId, false);
     }
 
     async function editLessonPrompt(lessonId, courseId) {
@@ -1141,43 +1280,49 @@ currentCourseLessons = lessons || [];
 
       const title = prompt("Название урока:", lesson.title);
       if (title === null) return;
-      const video_url = prompt("Ссылка на видео:", lesson.video_url);
+      const video_url = prompt("Ссылка на видео:", lesson.video_url || '');
       if (video_url === null) return;
       const description = prompt("Описание урока:", lesson.description || '');
+      if (description === null) return;
 
-      let existingFile = (lesson.attachments && lesson.attachments[0]) ? lesson.attachments[0] : {};
-      const file_name = prompt("Название прикрепляемого файла / документа (необязательно):", existingFile.name || '');
-      let attachments = [];
-      if (file_name) {
-        const file_url = prompt("Ссылка на файл:", existingFile.url || '');
-        if (file_url) {
-          attachments.push({ name: file_name, url: file_url });
-        }
-      }
+      // Do not overwrite attachments while editing lesson title/video/description.
+      const { error } = await supabaseClient.from('lessons').update({
+        title: title.trim(),
+        video_url: video_url.trim(),
+        description
+      }).eq('id', lessonId);
 
-      let lessonData = { title, video_url, description };
-      if (attachments.length > 0 || lesson.attachments) {
-         lessonData.attachments = attachments;
-      }
-
-      const { error } = await supabaseClient.from('lessons').update(lessonData).eq('id', lessonId);
       if (error) {
-         if (error.message.includes('attachments')) {
-             alert('Внимание! В базе данных Supabase (таблица "lessons") нет колонки "attachments". Видеоурок обновлен БЕЗ файла.\n\nЧтобы файлы заработали, зайдите в Supabase и создайте колонку "attachments" с типом данных "JSONB".');
-             delete lessonData.attachments;
-             await supabaseClient.from('lessons').update(lessonData).eq('id', lessonId);
-         } else {
-             alert("Ошибка при сохранении: " + error.message);
-         }
+        alert("Ошибка при обновлении урока: " + error.message);
+        return;
       }
-      openCourse(courseId, false);
+      await openCourse(courseId, false);
     }
 
     async function deleteLesson(lessonId, courseId) {
-      if (confirm("Удалить этот урок?")) {
-        await supabaseClient.from('lessons').delete().eq('id', lessonId);
-        openCourse(courseId, false);
+      if (!confirm("Удалить этот урок?")) return;
+      const lesson = currentCourseLessons.find(l => l.id === lessonId);
+      const storedFiles = normalizeAttachmentList(lesson?.attachments).filter(file => file.path);
+      if (storedFiles.length) {
+        const byBucket = {};
+        storedFiles.forEach(file => {
+          const bucket = file.bucket || LESSON_FILES_BUCKET;
+          (byBucket[bucket] ||= []).push(file.path);
+        });
+        for (const [bucket, paths] of Object.entries(byBucket)) {
+          const { error } = await supabaseClient.storage.from(bucket).remove(paths);
+          if (error) {
+            alert('Не удалось удалить прикреплённые файлы: ' + error.message);
+            return;
+          }
+        }
       }
+      const { error } = await supabaseClient.from('lessons').delete().eq('id', lessonId);
+      if (error) {
+        alert('Ошибка удаления урока: ' + error.message);
+        return;
+      }
+      await openCourse(courseId, false);
     }
 
     function openProfileModal() {

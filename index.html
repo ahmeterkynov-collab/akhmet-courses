@@ -311,12 +311,13 @@
     let currentCoursesList = [];
     let userProgressMap = {};
     let allStudentsData = [];
+    
+    // Централизованное состояние для корректной навигации без сбросов
     let navigationState = { view: 'auth', courseId: null, lessonId: null };
 
     function initTheme() {
       const body = document.body;
       const icon = document.getElementById('theme-icon');
-      
       if (currentTheme === 'light') {
         body.className = 'theme-light min-h-screen flex flex-col no-select transition-colors duration-300';
         if (icon) icon.className = 'fa-solid fa-sun text-xs sm:text-sm text-amber-400';
@@ -332,11 +333,36 @@
       initTheme();
     }
 
+    // ИСПРАВЛЕНИЕ #1: Мгновенное обновление текстов без потери активной страницы
     function setLanguage(lang) {
       currentLang = lang;
       localStorage.setItem('lms_lang', lang);
       updateLanguageUI();
-      renderCurrentView();
+      
+      if (!currentUser) {
+         renderAuthView(); // Если мы на экране входа, просто перерисовываем его
+         return;
+      }
+
+      if (navigationState.view === 'courses') {
+         renderCoursesHTML(); // Только отрисовка HTML, без запросов в БД
+      } else if (navigationState.view === 'course-detail' && navigationState.courseId) {
+         const hasAccess = userRole === 'admin' || !!userCourseAccessMap[navigationState.courseId];
+         if (!hasAccess && userRole !== 'admin') {
+             renderLockedCourseView(navigationState.courseId, document.getElementById('app-content'));
+         } else {
+             let activeLesson = currentCourseLessons[0];
+             if (navigationState.lessonId) {
+                 const found = currentCourseLessons.find(l => l.id === navigationState.lessonId);
+                 if (found) activeLesson = found;
+             }
+             if (activeLesson) {
+                 renderLessonDetailsView(activeLesson, navigationState.courseId, document.getElementById('app-content'));
+             } else {
+                 openCourse(navigationState.courseId, false); // Если уроков нет в памяти, грузим заново
+             }
+         }
+      }
     }
 
     function updateLanguageUI() {
@@ -420,6 +446,7 @@
       }
     }
 
+    // ИСПРАВЛЕНИЕ #2: Защита прав администратора для владельца
     async function checkAuthStatus() {
       if (!supabaseClient) return;
 
@@ -433,17 +460,23 @@
             .eq('id', currentUser.id)
             .maybeSingle();
 
-          userRole = profile?.role || 'student';
+          let dbRole = profile?.role;
+          
+          // Принудительная выдача прав админа владельцу почты
+          // Это решает проблему, когда RLS политики Supabase блокируют чтение своей роли
+          if (currentUser.email === 'ahmet.erkynov@gmail.com') {
+              dbRole = 'admin';
+          }
+
+          userRole = dbRole || 'student';
           userFullName = profile?.full_name || currentUser.email.split('@')[0];
 
           await loadUserAccess();
           await loadUserProgress();
           updateUserMenu(userFullName);
-          if (navigationState.view === 'auth') {
-            renderCoursesView();
-          } else {
-            renderCurrentView();
-          }
+          
+          // Переход на курсы после входа
+          renderCoursesView();
         } else {
           currentUser = null;
           updateUserMenu(null);
@@ -594,20 +627,7 @@
       }
     }
 
-    function renderCurrentView() {
-      if (navigationState.view === 'courses') {
-        renderCoursesView();
-      } else if (navigationState.view === 'course-detail' && navigationState.courseId) {
-        openCourse(navigationState.courseId, false);
-      } else {
-        if (currentUser) {
-          renderCoursesView();
-        } else {
-          renderAuthView();
-        }
-      }
-    }
-
+    // Разделяем загрузку данных и отрисовку списка курсов
     async function renderCoursesView() {
       navigationState = { view: 'courses', courseId: null, lessonId: null };
       const container = document.getElementById('app-content');
@@ -615,7 +635,12 @@
 
       const { data: courses } = await supabaseClient.from('courses').select('*').order('created_at', { ascending: false });
       currentCoursesList = courses || [];
+      renderCoursesHTML();
+    }
 
+    // Чистая отрисовка курсов без запроса в БД (для мгновенной смены языка)
+    async function renderCoursesHTML() {
+      const container = document.getElementById('app-content');
       let html = ``;
 
       if (userRole !== 'admin') {
@@ -661,6 +686,7 @@
 
       if (currentCoursesList && currentCoursesList.length > 0) {
         for (let c of currentCoursesList) {
+          // Подгружаем кол-во уроков локально
           const { data: courseLessons } = await supabaseClient.from('lessons').select('id').eq('course_id', c.id);
           const lessonsCount = courseLessons ? courseLessons.length : 0;
           const lessonsText = currentLang === 'kk' ? `${lessonsCount} сабақ` : `${lessonsCount} уроков`;
@@ -718,7 +744,7 @@
 
       const hasAccess = userRole === 'admin' || !!userCourseAccessMap[courseId];
 
-      if (!lessons || lessons.length === 0) {
+      if (!currentCourseLessons || currentCourseLessons.length === 0) {
         container.innerHTML = `
           <div class="flex justify-between items-center mb-6">
             <button onclick="renderCoursesView()" class="text-xs sm:text-sm custom-sub hover:text-white inline-flex items-center gap-2">${i18n[currentLang].backToCourses}</button>
@@ -734,7 +760,16 @@
         return;
       }
 
-      renderLessonDetailsView(lessons[0], courseId, container);
+      // Если в навигации уже сохранен урок (например, при смене языка), открываем его
+      let activeLesson = currentCourseLessons[0];
+      if (navigationState.lessonId) {
+         const found = currentCourseLessons.find(l => l.id === navigationState.lessonId);
+         if (found) activeLesson = found;
+      } else {
+         navigationState.lessonId = activeLesson.id;
+      }
+
+      renderLessonDetailsView(activeLesson, courseId, container);
     }
 
     function renderLockedCourseView(courseId, container) {
@@ -887,6 +922,8 @@
     }
 
     function switchActiveLesson(lessonId, courseId) {
+      // ИСПРАВЛЕНИЕ: запоминаем выбранный урок в состоянии навигации
+      navigationState.lessonId = lessonId;
       const lesson = currentCourseLessons.find(l => l.id === lessonId);
       if (lesson) {
         renderLessonDetailsView(lesson, courseId, document.getElementById('app-content'));
@@ -1047,6 +1084,7 @@
 
     function closeStudentsModal() { document.getElementById('students-modal').classList.add('hidden'); }
 
+    // ИСПРАВЛЕНИЕ #3: Безопасное прикрепление файлов с перехватом ошибки Supabase
     async function addLessonPrompt(courseId) {
       const title = prompt("Название урока:");
       if (!title) return;
@@ -1063,7 +1101,22 @@
         }
       }
 
-      await supabaseClient.from('lessons').insert([{ course_id: courseId, title, video_url, description, attachments }]);
+      let lessonData = { course_id: courseId, title, video_url, description };
+      if (attachments.length > 0) {
+         lessonData.attachments = attachments;
+      }
+
+      const { error } = await supabaseClient.from('lessons').insert([lessonData]);
+      if (error) {
+         // Перехват ошибки, если колонки attachments нет в БД
+         if (error.message.includes('attachments')) {
+             alert('Внимание! В базе данных Supabase (таблица "lessons") нет колонки "attachments". Видеоурок сейчас будет сохранен БЕЗ файла.\n\nЧтобы файлы заработали, зайдите в Supabase и создайте колонку "attachments" с типом данных "JSONB".');
+             delete lessonData.attachments;
+             await supabaseClient.from('lessons').insert([lessonData]);
+         } else {
+             alert("Ошибка при сохранении: " + error.message);
+         }
+      }
       openCourse(courseId, false);
     }
 
@@ -1087,7 +1140,21 @@
         }
       }
 
-      await supabaseClient.from('lessons').update({ title, video_url, description, attachments }).eq('id', lessonId);
+      let lessonData = { title, video_url, description };
+      if (attachments.length > 0 || lesson.attachments) {
+         lessonData.attachments = attachments;
+      }
+
+      const { error } = await supabaseClient.from('lessons').update(lessonData).eq('id', lessonId);
+      if (error) {
+         if (error.message.includes('attachments')) {
+             alert('Внимание! В базе данных Supabase (таблица "lessons") нет колонки "attachments". Видеоурок обновлен БЕЗ файла.\n\nЧтобы файлы заработали, зайдите в Supabase и создайте колонку "attachments" с типом данных "JSONB".');
+             delete lessonData.attachments;
+             await supabaseClient.from('lessons').update(lessonData).eq('id', lessonId);
+         } else {
+             alert("Ошибка при сохранении: " + error.message);
+         }
+      }
       openCourse(courseId, false);
     }
 

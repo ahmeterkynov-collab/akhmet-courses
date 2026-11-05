@@ -951,13 +951,129 @@
       container.innerHTML = html;
     }
 
+    // Стабильная сортировка: заданный администратором порядок, затем номер в названии
+    // для старых записей с одинаковой позицией (часто 0), затем дата создания.
+    function lessonNumberFromTitle(title) {
+      const match = String(title || '').match(/^\s*(\d{1,4})\s*[-–.)]?\s*(?:сабақ|урок|lesson)(?=\s|[.:-]|$)/iu);
+      return match ? Number(match[1]) : null;
+    }
+
+    function orderedCourseLessons(lessons) {
+      return [...lessons].sort((a, b) => {
+        const positionA = Number(a.position ?? 0);
+        const positionB = Number(b.position ?? 0);
+        if (positionA !== positionB) return positionA - positionB;
+        const numberA = lessonNumberFromTitle(a.title);
+        const numberB = lessonNumberFromTitle(b.title);
+        if (numberA !== null && numberB !== null && numberA !== numberB) return numberA - numberB;
+        const dateA = a.created_at ? new Date(a.created_at).getTime() : NaN;
+        const dateB = b.created_at ? new Date(b.created_at).getTime() : NaN;
+        if (Number.isFinite(dateA) && Number.isFinite(dateB) && dateA !== dateB) return dateA - dateB;
+        return String(a.id).localeCompare(String(b.id));
+      });
+    }
+
+    let lessonOrderSaving = false;
+    function lessonOrderMessage(ru, kk) { return currentLang === 'kk' ? kk : ru; }
+
+    // Перенос урока на одну позицию вверх или вниз. Запоминаем порядок в Supabase.
+    async function moveLesson(lessonId, courseId, direction) {
+      if (userRole !== 'admin' || !currentUser || lessonOrderSaving || ![-1, 1].includes(direction)) return;
+      const list = [...currentCourseLessons];
+      const index = list.findIndex(l => l.id === lessonId);
+      const neighborIndex = index + direction;
+      if (index < 0 || neighborIndex < 0 || neighborIndex >= list.length) return;
+      [list[index], list[neighborIndex]] = [list[neighborIndex], list[index]];
+      await saveLessonOrder(courseId, list);
+    }
+
+    // Однократное восстановление хронологии старых уроков с названиями «1-САБАҚ», «2-САБАҚ»…
+    async function arrangeLessonsByNumber(courseId) {
+      if (userRole !== 'admin' || !currentUser || lessonOrderSaving) return;
+      const current = [...currentCourseLessons];
+      if (!current.some(lesson => lessonNumberFromTitle(lesson.title) !== null)) {
+        alert(lessonOrderMessage('В названиях нет номеров в формате 1-САБАҚ или 1-УРОК. Можно использовать стрелки.', 'Атауларда 1-САБАҚ үлгісіндегі нөмір жоқ. Көрсеткілерді пайдаланыңыз.'));
+        return;
+      }
+      const list = current.map((lesson, oldIndex) => ({ lesson, oldIndex }));
+      list.sort((a, b) => {
+        const na = lessonNumberFromTitle(a.lesson.title);
+        const nb = lessonNumberFromTitle(b.lesson.title);
+        if (na === null && nb === null) return a.oldIndex - b.oldIndex;
+        if (na === null) return 1;
+        if (nb === null) return -1;
+        return na - nb || a.oldIndex - b.oldIndex;
+      });
+      await saveLessonOrder(courseId, list.map(item => item.lesson));
+    }
+
+    async function saveLessonOrder(courseId, lessons) {
+      if (userRole !== 'admin' || !currentUser || !supabaseClient || lessonOrderSaving) return;
+      // Не меняем список, если переданы лишние или отсутствующие уроки.
+      if (lessons.length !== currentCourseLessons.length ||
+          new Set(lessons.map(l => l.id)).size !== lessons.length ||
+          lessons.some(l => !currentCourseLessons.find(c => c.id === l.id))) return;
+      lessonOrderSaving = true;
+      const buttons = document.querySelectorAll('[data-lesson-order-action]');
+      buttons.forEach(button => button.disabled = true);
+      try {
+        for (let index = 0; index < lessons.length; index++) {
+          const lesson = lessons[index];
+          if (Number(lesson.position) === index + 1) continue;
+          const {data, error} = await supabaseClient.from('lessons')
+            .update({ position: index + 1 })
+            .eq('id', lesson.id)
+            .eq('course_id', courseId)
+            .select('id');
+          if (error) throw error;
+          if (!data || !data.length) throw new Error(lessonOrderMessage('Supabase не подтвердил обновление: проверьте права администратора (RLS).', 'Supabase жаңартуды растамады: әкімші рұқсатын (RLS) тексеріңіз.'));
+        }
+        currentCourseLessons = lessons.map((lesson, index) => ({ ...lesson, position: index + 1 }));
+        const listContainer = document.getElementById('lesson-list-items');
+        if (listContainer) listContainer.innerHTML = renderLessonListItems(courseId, navigationState.lessonId);
+        else await openCourse(courseId, false);
+      } catch (err) {
+        alert(lessonOrderMessage('Не удалось сохранить порядок уроков: ', 'Сабақтардың ретін сақтау мүмкін болмады: ') + (err.message || String(err)));
+        await openCourse(courseId, false); // Перечитываем реальный порядок после ошибки
+      } finally {
+        lessonOrderSaving = false;
+      }
+    }
+
+    function renderLessonListItems(courseId, activeLessonId) {
+      return currentCourseLessons.map((lesson, index) => {
+        const completed = !!userProgressMap[lesson.id];
+        const current = lesson.id === activeLessonId;
+        const up = lessonOrderMessage('Выше', 'Жоғары');
+        const down = lessonOrderMessage('Ниже', 'Төмен');
+        return `
+          <div class="p-3 rounded-xl custom-input border ${current ? 'border-blue-500/80 bg-blue-950/20' : 'hover:border-blue-500/50'} transition flex items-center justify-between gap-2">
+            <button type="button" class="cursor-pointer flex items-center gap-2.5 flex-grow min-w-0 text-left" onclick="switchActiveLesson('${lesson.id}', '${courseId}')">
+              <i class="fa-solid ${completed ? 'fa-circle-check text-green-400 text-sm' : 'fa-circle text-slate-500 text-xs'} flex-shrink-0"></i>
+              <span title="${escapeHtml(lesson.title)}" class="text-xs sm:text-sm font-medium ${completed ? 'custom-sub line-through' : ''} truncate">${index + 1}. ${escapeHtml(lesson.title)}</span>
+            </button>
+            ${userRole === 'admin' ? `
+              <div class="flex items-center gap-0.5 flex-shrink-0">
+                <button data-lesson-order-action type="button" onclick="moveLesson('${lesson.id}', '${courseId}', -1)" ${index === 0 ? 'disabled' : ''} class="p-1.5 text-blue-400 hover:text-white disabled:opacity-25 disabled:cursor-not-allowed" title="${up}" aria-label="${up}"><i class="fa-solid fa-arrow-up text-xs"></i></button>
+                <button data-lesson-order-action type="button" onclick="moveLesson('${lesson.id}', '${courseId}', 1)" ${index === currentCourseLessons.length - 1 ? 'disabled' : ''} class="p-1.5 text-blue-400 hover:text-white disabled:opacity-25 disabled:cursor-not-allowed" title="${down}" aria-label="${down}"><i class="fa-solid fa-arrow-down text-xs"></i></button>
+                <button type="button" onclick="editLessonPrompt('${lesson.id}', '${courseId}')" class="custom-sub hover:text-yellow-400 p-1.5" title="${lessonOrderMessage('Редактировать', 'Өңдеу')}"><i class="fa-solid fa-pen text-xs"></i></button>
+                <button type="button" onclick="deleteLesson('${lesson.id}', '${courseId}')" class="custom-sub hover:text-red-400 p-1.5" title="${lessonOrderMessage('Удалить', 'Жою')}"><i class="fa-solid fa-trash text-xs"></i></button>
+              </div>` : ''}
+          </div>`;
+      }).join('');
+    }
+
     async function openCourse(courseId, updateNav = true) {
       if (updateNav) navigationState = { view: 'course-detail', courseId: courseId, lessonId: null };
       const container = document.getElementById('app-content');
       container.innerHTML = `<div class="text-center py-12 text-slate-500"><i class="fa-solid fa-spinner fa-spin text-2xl"></i></div>`;
 
-      const { data: lessons } = await supabaseClient.from('lessons').select('*').eq('course_id', courseId).order('position', { ascending: true });
-      currentCourseLessons = lessons || [];
+      const { data: lessons, error: lessonLoadError } = await supabaseClient.from('lessons').select('*').eq('course_id', courseId).order('position', { ascending: true });
+      if (lessonLoadError) {
+        container.innerHTML = `<div class="text-red-400 text-center py-12">${lessonOrderMessage('Ошибка загрузки уроков: ', 'Сабақтарды жүктеу қатесі: ')}${escapeHtml(lessonLoadError.message)}</div>`;
+        return;
+      }
+      currentCourseLessons = orderedCourseLessons(lessons || []);
 
       const hasAccess = userRole === 'admin' || !!userCourseAccessMap[courseId];
 
@@ -1151,27 +1267,11 @@
           </div>
 
           <div class="custom-card border rounded-2xl p-4 h-fit">
-            <h3 class="text-xs font-bold custom-sub uppercase tracking-wider mb-4 px-2">${i18n[currentLang].lessonsTitle}</h3>
-            <div class="space-y-2">
-              ${currentCourseLessons.map((l, idx) => {
-                const lCompleted = !!userProgressMap[l.id];
-                const isCurrent = l.id === activeLesson.id;
-                return `
-                  <div class="p-3 rounded-xl custom-input border ${isCurrent ? 'border-blue-500/80 bg-blue-950/20' : 'hover:border-blue-500/50'} transition flex items-center justify-between group">
-                    <div class="cursor-pointer flex items-center gap-2.5 flex-grow mr-2 min-w-0" onclick="switchActiveLesson('${l.id}', '${courseId}')">
-                      <i class="fa-solid ${lCompleted ? 'fa-circle-check text-green-400 text-sm' : 'fa-circle text-slate-500 text-xs'} flex-shrink-0"></i>
-                      <span class="text-xs sm:text-sm font-medium ${lCompleted ? 'custom-sub line-through' : ''} truncate">${idx + 1}. ${l.title}</span>
-                    </div>
-                    <div class="flex items-center space-x-1.5 flex-shrink-0">
-                      ${userRole === 'admin' ? `
-                        <button onclick="editLessonPrompt('${l.id}', '${courseId}')" class="custom-sub hover:text-yellow-400 p-1" title="Редактировать"><i class="fa-solid fa-pen text-xs"></i></button>
-                        <button onclick="deleteLesson('${l.id}', '${courseId}')" class="custom-sub hover:text-red-400 p-1" title="Удалить"><i class="fa-solid fa-trash text-xs"></i></button>
-                      ` : ''}
-                    </div>
-                  </div>
-                `;
-              }).join('')}
+            <div class="flex flex-wrap items-center justify-between gap-2 mb-4 px-2">
+              <h3 class="text-xs font-bold custom-sub uppercase tracking-wider">${i18n[currentLang].lessonsTitle}</h3>
+              ${userRole === 'admin' ? `<button type="button" data-lesson-order-action onclick="arrangeLessonsByNumber('${courseId}')" title="${lessonOrderMessage('Выстроить по номерам в названиях', 'Атаулардағы нөмірлер бойынша реттеу')}" class="text-[10px] px-2 py-1.5 bg-blue-600/15 text-blue-400 border border-blue-500/30 rounded-lg hover:bg-blue-600/25"><i class="fa-solid fa-arrow-down-1-9 mr-1"></i>${lessonOrderMessage('По номерам', 'Нөмір бойынша')}</button>` : ''}
             </div>
+            <div class="space-y-2" id="lesson-list-items">${renderLessonListItems(courseId, activeLesson.id)}</div>
           </div>
         </div>
       `;
@@ -1455,11 +1555,25 @@
       if (!video_url || !video_url.trim()) return;
       const description = prompt("Описание урока:") || '';
 
+      // Новому уроку автоматически назначаем позицию после последнего урока курса.
+      // Читаем из базы, а не из текущего экрана, чтобы избежать устаревшей нумерации.
+      const {data: positions, error: positionError} = await supabaseClient.from('lessons')
+        .select('position').eq('course_id', courseId);
+      if (positionError) {
+        alert(lessonOrderMessage('Не удалось определить порядок уроков: ', 'Сабақтардың ретін анықтау мүмкін болмады: ') + positionError.message);
+        return;
+      }
+      const nextPosition = (positions || []).reduce((max, row) => {
+        const value = Number(row.position);
+        return Number.isFinite(value) ? Math.max(max, value) : max;
+      }, 0) + 1;
+
       const { error } = await supabaseClient.from('lessons').insert([{
         course_id: courseId,
         title: title.trim(),
         video_url: video_url.trim(),
-        description
+        description,
+        position: nextPosition
       }]);
 
       if (error) {

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="ru" id="html-root">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,11 +10,51 @@
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
     body { font-family: 'Inter', sans-serif; }
-    .glassmorphism {
+    
+    .theme-dark {
+      background-color: #030712;
+      color: #f1f5f9;
+    }
+    .theme-dark .glassmorphism {
       background: rgba(15, 23, 42, 0.90);
       backdrop-filter: blur(12px);
       border-bottom: 1px solid rgba(255, 255, 255, 0.08);
     }
+    .theme-dark .custom-card {
+      background-color: #0f172a;
+      border-color: #1e293b;
+    }
+    .theme-dark .custom-input {
+      background-color: #020617;
+      border-color: #1e293b;
+      color: #ffffff;
+    }
+    .theme-dark .custom-sub {
+      color: #94a3b8;
+    }
+
+    .theme-light {
+      background-color: #f8fafc;
+      color: #0f172a;
+    }
+    .theme-light .glassmorphism {
+      background: rgba(255, 255, 255, 0.90);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+    }
+    .theme-light .custom-card {
+      background-color: #ffffff;
+      border-color: #e2e8f0;
+    }
+    .theme-light .custom-input {
+      background-color: #f1f5f9;
+      border-color: #cbd5e1;
+      color: #0f172a;
+    }
+    .theme-light .custom-sub {
+      color: #64748b;
+    }
+
     .no-select {
       -webkit-touch-callout: none;
       -webkit-user-select: none;
@@ -23,50 +63,42 @@
       -ms-user-select: none;
       user-select: none;
     }
-    /* Жесткое скрытие через CSS плашки Netlify */
-    iframe[src*="netlify"], 
-    iframe[id*="netlify"], 
-    div[style*="z-index: 2147483647"],
-    a[href*="netlify.com/support"] {
-      display: none !important;
-      visibility: hidden !important;
-      opacity: 0 !important;
-      pointer-events: none !important;
-      width: 0 !important;
-      height: 0 !important;
+    iframe[src*="netlify"], iframe[id*="netlify"], div[style*="z-index: 2147483647"], a[href*="netlify.com/support"] {
+      display: none !important; visibility: hidden !important; opacity: 0 !important; pointer-events: none !important; width: 0 !important; height: 0 !important;
     }
   </style>
 </head>
-<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col no-select" oncontextmenu="return false;">
+<body class="theme-dark min-h-screen flex flex-col no-select transition-colors duration-300" oncontextmenu="return false;">
 
-  <!-- Адаптивная шапка -->
+  <!-- Шапка -->
   <header class="glassmorphism sticky top-0 z-50">
     <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-2 sm:py-3 flex flex-wrap items-center justify-between gap-2">
-      
-      <!-- Логотип и Бренд -->
-      <div class="flex items-center space-x-2.5 cursor-pointer min-w-0" onclick="handleLogoClick()">
-        <img id="brand-logo-img" src="https://p16-common-sign.tiktokcdn.com/tos-useast2a-avt-0068-euttp/6886f3ee61cf6662f1b894a66006e428~tplv-tiktokx-cropcenter:1080:1080.jpeg?dr=14579&refresh_token=9f2876a5&x-expires=1793988000&x-signature=XG44myIc7lHN9UYmLIEmy%2BKKWsE%3D&t=4d5b0474&ps=13740610&shp=a5d48078&shcp=81f88b70&idc=my2" onerror="this.onerror=null; this.src='https://api.dicebear.com/7.x/bottts/svg?seed=Ahmet';" alt="Ахмет" class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl object-cover border border-blue-500/40 shadow-md shadow-blue-500/20 flex-shrink-0">
+      <div class="flex items-center space-x-2.5 cursor-pointer min-w-0" onclick="goHome()">
+        <img src="https://p16-common-sign.tiktokcdn.com/tos-useast2a-avt-0068-euttp/6886f3ee61cf6662f1b894a66006e428~tplv-tiktokx-cropcenter:1080:1080.jpeg?dr=14579&refresh_token=9f2876a5&x-expires=1793988000&x-signature=XG44myIc7lHN9UYmLIEmy%2BKKWsE%3D&t=4d5b0474&ps=13740610&shp=a5d48078&shcp=81f88b70&idc=my2" onerror="this.onerror=null; this.src='https://api.dicebear.com/7.x/bottts/svg?seed=Ahmet';" alt="Ахмет" class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl object-cover border border-blue-500/40 shadow-md shadow-blue-500/20 flex-shrink-0">
         <div class="min-w-0">
-          <span class="text-sm sm:text-base font-bold text-white leading-tight block truncate">Ахметтен пайдалы ақпарат</span>
-          <span class="block text-[10px] sm:text-[11px] text-blue-400 font-medium truncate" id="lang-subtitle">Оқыту платформасы</span>
+          <span class="text-sm sm:text-base font-bold leading-tight block truncate">Ахметтен пайдалы ақпарат</span>
+          <span class="block text-[10px] sm:text-[11px] text-blue-500 font-medium truncate" id="lang-subtitle">Платформа обучения</span>
         </div>
       </div>
 
-      <!-- Правый блок -->
       <div class="flex items-center space-x-2 sm:space-x-3 ml-auto">
+        <button onclick="toggleTheme()" class="p-2 rounded-lg bg-slate-800/40 hover:bg-slate-800/70 border border-slate-700/50 text-slate-300 transition" title="Сменить тему">
+          <i id="theme-icon" class="fa-solid fa-moon text-xs sm:text-sm"></i>
+        </button>
+
         <div class="bg-slate-900 border border-slate-800 rounded-lg p-0.5 sm:p-1 flex items-center text-[11px] sm:text-xs font-semibold">
           <button onclick="setLanguage('ru')" id="lang-btn-ru" class="px-2 py-0.5 sm:py-1 rounded-md transition-all">RU</button>
           <button onclick="setLanguage('kk')" id="lang-btn-kk" class="px-2 py-0.5 sm:py-1 rounded-md transition-all">KK</button>
         </div>
 
-        <button id="db-config-btn" onclick="openConfigModal()" class="hidden p-1.5 sm:p-2 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition" title="Настройки">
+        <button id="db-config-btn" onclick="openConfigModal()" class="hidden p-1.5 sm:p-2 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition" title="Настройки БД">
           <i class="fa-solid fa-database text-xs sm:text-sm"></i>
         </button>
 
         <div id="user-menu" class="hidden flex items-center space-x-2 border-l border-slate-800 pl-2 sm:pl-3">
           <button onclick="openProfileModal()" class="flex items-center space-x-1.5 hover:opacity-80 transition max-w-[120px] sm:max-w-none">
             <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-xs sm:text-sm flex-shrink-0" id="user-avatar">A</div>
-            <span class="text-xs sm:text-sm font-medium text-slate-300 truncate hidden sm:inline" id="user-name">Пользователь</span>
+            <span class="text-xs sm:text-sm font-medium truncate hidden sm:inline" id="user-name">Пользователь</span>
             <span id="user-role-badge" class="text-[9px] sm:text-[10px] px-1.5 py-0.5 rounded-full font-bold uppercase bg-slate-800 text-slate-400 border border-slate-700">Ученик</span>
           </button>
           <button onclick="logout()" class="p-1.5 sm:p-2 text-slate-400 hover:text-red-400 rounded-lg hover:bg-slate-800 transition" title="Выйти">
@@ -80,43 +112,45 @@
   <main class="flex-grow max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 py-6" id="app-content">
   </main>
 
+  <!-- Модальное окно профиля -->
   <div id="profile-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
-    <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl">
+    <div class="custom-card border rounded-2xl max-w-md w-full p-6 shadow-2xl">
       <div class="flex justify-between items-center mb-4">
-        <h3 class="text-lg font-bold text-white flex items-center gap-2">
+        <h3 class="text-lg font-bold flex items-center gap-2">
           <i class="fa-solid fa-user-gear text-blue-500"></i> <span id="txt-profile-title">Настройки профиля</span>
         </h3>
         <button onclick="closeProfileModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
       </div>
       <div class="space-y-4">
         <div>
-          <label class="block text-xs text-slate-400 mb-1">Email</label>
-          <input type="text" id="profile-email" disabled class="w-full bg-slate-950 border border-slate-800 text-slate-500 rounded-lg px-3 py-2 text-sm">
+          <label class="block text-xs custom-sub mb-1">Email</label>
+          <input type="text" id="profile-email" disabled class="w-full custom-input rounded-lg px-3 py-2 text-sm">
         </div>
         <div>
-          <label class="block text-xs text-slate-400 mb-1" id="txt-label-fullname">ФИО / Аты-жөні</label>
-          <input type="text" id="profile-fullname" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-white">
+          <label class="block text-xs custom-sub mb-1" id="txt-label-fullname">ФИО / Аты-жөні</label>
+          <input type="text" id="profile-fullname" class="w-full custom-input rounded-lg px-3 py-2 text-sm">
         </div>
       </div>
       <div class="mt-6 flex justify-end gap-3">
-        <button onclick="closeProfileModal()" class="px-4 py-2 text-sm text-slate-400">Отмена</button>
-        <button onclick="saveProfile()" class="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-500">Сохранить</button>
+        <button onclick="closeProfileModal()" class="px-4 py-2 text-sm custom-sub" id="txt-cancel">Отмена</button>
+        <button onclick="saveProfile()" class="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-500" id="txt-save">Сохранить</button>
       </div>
     </div>
   </div>
 
+  <!-- Модальное окно управления учениками -->
   <div id="students-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
-    <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-2xl w-full p-6 shadow-2xl max-h-[85vh] flex flex-col">
+    <div class="custom-card border rounded-2xl max-w-3xl w-full p-6 shadow-2xl max-h-[85vh] flex flex-col">
       <div class="flex justify-between items-center mb-4">
-        <h3 class="text-lg font-bold text-white flex items-center gap-2">
-          <i class="fa-solid fa-users text-blue-500"></i> <span>Управление учениками</span>
+        <h3 class="text-lg font-bold flex items-center gap-2">
+          <i class="fa-solid fa-users text-blue-500"></i> <span id="txt-students-title">Управление учениками и доступами</span>
         </h3>
         <button onclick="closeStudentsModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
       </div>
       <div class="mb-4">
         <div class="relative">
           <i class="fa-solid fa-magnifying-glass absolute left-3 top-3 text-slate-500 text-xs"></i>
-          <input type="text" id="student-search-input" oninput="filterStudentsList()" placeholder="Поиск по имени или email..." class="w-full bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-4 py-2.5 text-xs text-white focus:outline-none focus:border-blue-500">
+          <input type="text" id="student-search-input" oninput="filterStudentsList()" placeholder="Поиск по имени или email..." class="w-full custom-input rounded-xl pl-9 pr-4 py-2.5 text-xs focus:outline-none focus:border-blue-500">
         </div>
       </div>
       <div class="overflow-y-auto flex-grow space-y-3 pr-1" id="students-list-container">
@@ -124,55 +158,43 @@
     </div>
   </div>
 
+  <!-- Модальное окно сброса пароля -->
   <div id="reset-password-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
-    <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl">
+    <div class="custom-card border rounded-2xl max-w-md w-full p-6 shadow-2xl">
       <div class="flex justify-between items-center mb-4">
-        <h3 class="text-lg font-bold text-white">Сброс пароля</h3>
+        <h3 class="text-lg font-bold" id="txt-reset-title">Сброс пароля</h3>
         <button onclick="closeResetModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
       </div>
-      <p class="text-xs text-slate-400 mb-4">Введите ваш Email, и мы отправим ссылку для сброса пароля.</p>
-      <input type="email" id="reset-email" placeholder="email@example.com" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white mb-4 focus:outline-none focus:border-blue-500">
+      <p class="text-xs custom-sub mb-4" id="txt-reset-desc">Введите ваш Email, и мы отправим ссылку для сброса пароля.</p>
+      <input type="email" id="reset-email" placeholder="email@example.com" class="w-full custom-input rounded-xl px-4 py-3 text-sm mb-4 focus:outline-none focus:border-blue-500">
       <div id="reset-msg" class="text-xs hidden mb-4 p-3 rounded-lg"></div>
       <div class="flex justify-end gap-3">
-        <button onclick="closeResetModal()" class="px-4 py-2 text-sm text-slate-400">Отмена</button>
-        <button onclick="handleResetPassword()" class="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-500">Отправить</button>
+        <button onclick="closeResetModal()" class="px-4 py-2 text-sm custom-sub" id="txt-reset-cancel">Отмена</button>
+        <button onclick="handleResetPassword()" class="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-500" id="txt-reset-send">Отправить</button>
       </div>
     </div>
   </div>
 
+  <!-- Модальное окно конфигурации Supabase -->
   <div id="config-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
-    <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl">
-      <h3 class="text-lg font-bold text-white mb-4"><i class="fa-solid fa-database text-blue-500"></i> Настройки Supabase</h3>
+    <div class="custom-card border rounded-2xl max-w-md w-full p-6 shadow-2xl">
+      <h3 class="text-lg font-bold mb-4"><i class="fa-solid fa-database text-blue-500"></i> Настройки Supabase</h3>
       <div class="space-y-4">
         <div>
-          <label class="block text-xs text-slate-300 mb-1">Project URL</label>
-          <input type="text" id="supabase-url" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-white">
+          <label class="block text-xs custom-sub mb-1">Project URL</label>
+          <input type="text" id="supabase-url" class="w-full custom-input rounded-lg px-3 py-2 text-sm">
         </div>
         <div>
-          <label class="block text-xs text-slate-300 mb-1">Anon / Public Key</label>
-          <textarea id="supabase-key" rows="3" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white font-mono"></textarea>
+          <label class="block text-xs custom-sub mb-1">Anon / Public Key</label>
+          <textarea id="supabase-key" rows="3" class="w-full custom-input rounded-lg px-3 py-2 text-xs font-mono"></textarea>
         </div>
       </div>
       <div class="mt-6 flex justify-end gap-3">
-        <button onclick="closeConfigModal()" class="px-4 py-2 text-sm text-slate-400">Отмена</button>
+        <button onclick="closeConfigModal()" class="px-4 py-2 text-sm custom-sub">Отмена</button>
         <button onclick="saveSupabaseConfig()" class="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg">Сохранить</button>
       </div>
     </div>
   </div>
-
-  <!-- Скрипт автоматического удаления плашки Netlify -->
-  <script>
-    setInterval(() => {
-      document.querySelectorAll('iframe, div, a').forEach(el => {
-        const src = el.src || '';
-        const href = el.href || '';
-        const html = el.innerHTML || '';
-        if (src.includes('netlify') || href.includes('netlify') || html.includes('Powered by Netlify')) {
-          el.remove();
-        }
-      });
-    }, 500);
-  </script>
 
   <script>
     const DEFAULT_SUPABASE_URL = 'https://qnjddzjvjfoogubmzynn.supabase.co';
@@ -180,7 +202,7 @@
 
     const i18n = {
       ru: {
-        subtitle: "Оқыту платформасы",
+        subtitle: "Платформа обучения",
         loginTab: "Вход",
         registerTab: "Регистрация",
         emailLabel: "Электронная почта",
@@ -203,9 +225,29 @@
         noCourses: "Курсы еще не созданы.",
         noLessons: "В этом курсе пока нет уроков.",
         noAccessTitle: "Доступ к обучению ожидает подтверждения",
-        noAccessText: "Вы можете просматривать список доступных курсов. Чтобы открыть полный доступ к видеоурокам и материалам, подтвердите оплату через WhatsApp.",
+        noAccessText: "Вы можете просматривать список доступных курсов. Чтобы открыть полный доступ к конкретному курсу, подтвердите оплату через WhatsApp.",
         whatsappBtn: "Написать Администратору в WhatsApp",
-        noDbWarning: "Ошибка подключения к базе данных."
+        noDbWarning: "Ошибка подключения к базе данных.",
+        studentsBtn: "Ученики",
+        studentsTitle: "Управление учениками и доступами",
+        resetTitle: "Сброс пароля",
+        resetDesc: "Введите ваш Email, и мы отправим ссылку для сброса пароля.",
+        cancel: "Отмена",
+        save: "Сохранить",
+        send: "Отправить",
+        lessonsTitle: "Список уроков",
+        progressText: "Прогресс",
+        downloadCert: "Скачать Сертификат",
+        issuedDate: "Дата выдачи",
+        platformName: "Платформа: Ахметтен пайдалы ақпарат",
+        materialsTitle: "Материалы к уроку",
+        downloadFile: "Скачать файл",
+        watchLessons: "Смотреть уроки",
+        viewProgram: "Посмотреть программу",
+        videosLocked: "Видеоуроки заблокированы",
+        lockedDesc: "У вас нет активного доступа к этому курсу. Обратитесь к администратору для подключения.",
+        lessonCompleted: "Урок пройден",
+        markCompleted: "Отметить как пройденный"
       },
       kk: {
         subtitle: "Оқыту платформасы",
@@ -217,7 +259,7 @@
         loginBtn: "Кіру",
         registerBtn: "Тіркелу",
         forgotPass: "Құпиясөзді ұмыттыңыз ба?",
-        myCourses: "Қолжетімді курс тізімі",
+        myCourses: "Қолжетімді курстар",
         adminPanel: "Әкімші Панелі",
         createCourse: "Курс құру",
         addLesson: "Сабақ қосу",
@@ -231,44 +273,86 @@
         noCourses: "Курстар әлі жасалмаған.",
         noLessons: "Бұл курста әлі сабақтар жоқ.",
         noAccessTitle: "Оқуға қолжетімділік расталуын күтуде",
-        noAccessText: "Сіз қолжетімді курс тізімін көре аласыз. Видеосабақтар мен материалдарды ашу үшін WhatsApp арқылы төлемді растаңыз.",
+        noAccessText: "Сіз қолжетімді курс тізімін көре аласыз. Жеке курсқа толық қолжетімділік алу үшін WhatsApp арқылы төлемді растаңыз.",
         whatsappBtn: "Әкімшіге WhatsApp-қа жазу",
-        noDbWarning: "Дерекқорға қосылу қатесі."
+        noDbWarning: "Дерекқорға қосылу қатесі.",
+        studentsBtn: "Оқушылар",
+        studentsTitle: "Оқушылар мен қолжетімділікті басқару",
+        resetTitle: "Құпиясөзді қалпына келтіру",
+        resetDesc: "Электрондық поштаңызды енгізіңіз, біз сізге сілтеме жібереміз.",
+        cancel: "Болдырмау",
+        save: "Сақтау",
+        send: "Жіберу",
+        lessonsTitle: "Сабақтар тізімі",
+        progressText: "Прогресс",
+        downloadCert: "Сертификатты жүктеу",
+        issuedDate: "Берілген күні",
+        platformName: "Платформа: Ахметтен пайдалы ақпарат",
+        materialsTitle: "Сабақ материалдары",
+        downloadFile: "Файлды жүктеу",
+        watchLessons: "Сабақтарды көру",
+        viewProgram: "Бағдарламаны көру",
+        videosLocked: "Видеосабақтар бұғатталған",
+        lockedDesc: "Бұл курсқа қолжетімділігіңіз жоқ. Әкімшіге хабарласыңыз.",
+        lessonCompleted: "Сабақ өтілді",
+        markCompleted: "Өтілді деп белгілеу"
       }
     };
 
     let currentLang = localStorage.getItem('lms_lang') || 'ru';
+    let currentTheme = localStorage.getItem('lms_theme') || 'dark';
     let authTab = 'login';
     let supabaseClient = null;
     let currentUser = null;
     let userRole = 'student';
-    let userIsActive = false;
-    let userAccessExpiresAt = null;
     let userFullName = '';
+    let userCourseAccessMap = {};
     let currentCourseLessons = [];
     let currentCoursesList = [];
     let userProgressMap = {};
     let allStudentsData = [];
+    let navigationState = { view: 'courses', courseId: null, lessonId: null };
 
-    document.addEventListener('keydown', function(e) {
-      if ((e.ctrlKey && (e.key === 's' || e.key === 'u')) || e.key === 'F12') {
-        e.preventDefault();
+    function initTheme() {
+      const body = document.body;
+      const icon = document.getElementById('theme-icon');
+      
+      if (currentTheme === 'light') {
+        body.className = 'theme-light min-h-screen flex flex-col no-select transition-colors duration-300';
+        if (icon) icon.className = 'fa-solid fa-sun text-xs sm:text-sm text-amber-400';
+      } else {
+        body.className = 'theme-dark min-h-screen flex flex-col no-select transition-colors duration-300';
+        if (icon) icon.className = 'fa-solid fa-moon text-xs sm:text-sm';
       }
-    });
+    }
+
+    function toggleTheme() {
+      currentTheme = currentTheme === 'dark' ? 'light' : 'dark';
+      localStorage.setItem('lms_theme', currentTheme);
+      initTheme();
+    }
 
     function setLanguage(lang) {
       currentLang = lang;
       localStorage.setItem('lms_lang', lang);
       updateLanguageUI();
-      if (currentUser) renderCoursesView(); else renderAuthView();
+      renderCurrentView();
     }
 
     function updateLanguageUI() {
       document.getElementById('lang-subtitle').innerText = i18n[currentLang].subtitle;
       document.getElementById('lang-btn-ru').className = currentLang === 'ru' ? 'px-2 py-0.5 sm:py-1 rounded-md bg-blue-600 text-white' : 'px-2 py-0.5 sm:py-1 rounded-md text-slate-400 hover:text-white';
       document.getElementById('lang-btn-kk').className = currentLang === 'kk' ? 'px-2 py-0.5 sm:py-1 rounded-md bg-blue-600 text-white' : 'px-2 py-0.5 sm:py-1 rounded-md text-slate-400 hover:text-white';
+      
       document.getElementById('txt-profile-title').innerText = i18n[currentLang].profileTitle;
       document.getElementById('txt-label-fullname').innerText = i18n[currentLang].fullName;
+      document.getElementById('txt-cancel').innerText = i18n[currentLang].cancel;
+      document.getElementById('txt-save').innerText = i18n[currentLang].save;
+      document.getElementById('txt-students-title').innerText = i18n[currentLang].studentsTitle;
+      document.getElementById('txt-reset-title').innerText = i18n[currentLang].resetTitle;
+      document.getElementById('txt-reset-desc').innerText = i18n[currentLang].resetDesc;
+      document.getElementById('txt-reset-cancel').innerText = i18n[currentLang].cancel;
+      document.getElementById('txt-reset-send').innerText = i18n[currentLang].send;
     }
 
     function switchAuthTab(tab) {
@@ -279,12 +363,12 @@
     function renderAuthView() {
       const app = document.getElementById('app-content');
       app.innerHTML = `
-        <div class="max-w-md mx-auto mt-4 sm:mt-8 bg-slate-900 border border-slate-800 rounded-2xl p-6 sm:p-8 shadow-2xl">
+        <div class="max-w-md mx-auto mt-4 sm:mt-8 custom-card border rounded-2xl p-6 sm:p-8 shadow-2xl">
           <div class="flex border-b border-slate-800 mb-6">
-            <button onclick="switchAuthTab('login')" class="w-1/2 py-3 text-sm font-semibold border-b-2 transition ${authTab === 'login' ? 'border-blue-500 text-blue-400' : 'border-transparent text-slate-400 hover:text-white'}">
+            <button onclick="switchAuthTab('login')" class="w-1/2 py-3 text-sm font-semibold border-b-2 transition ${authTab === 'login' ? 'border-blue-500 text-blue-400' : 'border-transparent custom-sub'}">
               ${i18n[currentLang].loginTab}
             </button>
-            <button onclick="switchAuthTab('register')" class="w-1/2 py-3 text-sm font-semibold border-b-2 transition ${authTab === 'register' ? 'border-blue-500 text-blue-400' : 'border-transparent text-slate-400 hover:text-white'}">
+            <button onclick="switchAuthTab('register')" class="w-1/2 py-3 text-sm font-semibold border-b-2 transition ${authTab === 'register' ? 'border-blue-500 text-blue-400' : 'border-transparent custom-sub'}">
               ${i18n[currentLang].registerTab}
             </button>
           </div>
@@ -292,22 +376,22 @@
           <form onsubmit="${authTab === 'login' ? 'handleLogin(event)' : 'handleRegister(event)'}" class="space-y-4">
             ${authTab === 'register' ? `
               <div>
-                <label class="block text-xs uppercase text-slate-400 mb-1">${i18n[currentLang].nameLabel}</label>
-                <input type="text" id="reg-name" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-blue-500">
+                <label class="block text-xs uppercase custom-sub mb-1">${i18n[currentLang].nameLabel}</label>
+                <input type="text" id="reg-name" required class="w-full custom-input rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-blue-500">
               </div>
             ` : ''}
 
             <div>
-              <label class="block text-xs uppercase text-slate-400 mb-1">${i18n[currentLang].emailLabel}</label>
-              <input type="email" id="auth-email" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-blue-500">
+              <label class="block text-xs uppercase custom-sub mb-1">${i18n[currentLang].emailLabel}</label>
+              <input type="email" id="auth-email" required class="w-full custom-input rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-blue-500">
             </div>
 
             <div>
               <div class="flex justify-between items-center mb-1">
-                <label class="block text-xs uppercase text-slate-400">${i18n[currentLang].passwordLabel}</label>
+                <label class="block text-xs uppercase custom-sub">${i18n[currentLang].passwordLabel}</label>
                 ${authTab === 'login' ? `<button type="button" onclick="openResetModal()" class="text-[11px] text-blue-400 hover:underline">${i18n[currentLang].forgotPass}</button>` : ''}
               </div>
-              <input type="password" id="auth-password" required minlength="6" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-blue-500">
+              <input type="password" id="auth-password" required minlength="6" class="w-full custom-input rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-blue-500">
             </div>
 
             <div id="auth-error" class="text-red-400 text-xs hidden bg-red-950/50 p-3 rounded-lg border border-red-900/50"></div>
@@ -344,22 +428,14 @@
           currentUser = session.user;
           const { data: profile } = await supabaseClient
             .from('profiles')
-            .select('role, full_name, is_active, access_expires_at')
+            .select('role, full_name')
             .eq('id', currentUser.id)
             .maybeSingle();
 
           userRole = profile?.role || 'student';
           userFullName = profile?.full_name || currentUser.email.split('@')[0];
-          userAccessExpiresAt = profile?.access_expires_at || null;
 
-          let activeFlag = profile?.is_active ?? (userRole === 'admin');
-          if (activeFlag && userAccessExpiresAt && userRole !== 'admin') {
-            if (new Date() > new Date(userAccessExpiresAt)) {
-              activeFlag = false;
-            }
-          }
-          userIsActive = activeFlag;
-          
+          await loadUserAccess();
           await loadUserProgress();
           updateUserMenu(userFullName);
           renderCoursesView();
@@ -370,6 +446,26 @@
         }
       } catch(err) {
         console.error("Auth check failed:", err);
+      }
+    }
+
+    async function loadUserAccess() {
+      if (!currentUser || !supabaseClient) return;
+      userCourseAccessMap = {};
+      if (userRole === 'admin') return;
+
+      const { data } = await supabaseClient
+        .from('course_access')
+        .select('course_id, expires_at')
+        .eq('user_id', currentUser.id);
+
+      if (data) {
+        const now = new Date();
+        data.forEach(acc => {
+          if (!acc.expires_at || new Date(acc.expires_at) > now) {
+            userCourseAccessMap[acc.course_id] = acc.expires_at;
+          }
+        });
       }
     }
 
@@ -457,18 +553,17 @@
 
       if (error) {
         errorBox.innerText = error.message;
-        errorBox.classList.remove('hidden');
+        errorBox.classList.add('hidden');
       } else {
         if (data.user) {
           await supabaseClient.from('profiles').upsert({
             id: data.user.id,
             email: email,
             full_name: name,
-            role: 'student',
-            is_active: false
+            role: 'student'
           });
         }
-        successBox.innerText = "Успешно! Входим в систему...";
+        successBox.innerText = currentLang === 'kk' ? "Сәтті! Жүйеге кірудеміз..." : "Успешно! Входим в систему...";
         successBox.classList.remove('hidden');
         setTimeout(() => checkAuthStatus(), 1000);
       }
@@ -482,9 +577,7 @@
       const msg = document.getElementById('reset-msg');
       if (!email) return;
 
-      const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
-        redirectTo: window.location.href,
-      });
+      const { error } = await supabaseClient.auth.resetPasswordForEmail(email, { redirectTo: window.location.href });
 
       msg.classList.remove('hidden');
       if (error) {
@@ -492,11 +585,20 @@
         msg.innerText = error.message;
       } else {
         msg.className = "text-xs mb-4 p-3 rounded-lg bg-green-950/50 text-green-400 border border-green-900/50";
-        msg.innerText = "Инструкция по сбросу пароля отправлена на вашу почту!";
+        msg.innerText = currentLang === 'kk' ? "Құпиясөзді қалпына келтіру сілтемесі поштаңызға жіберілді!" : "Инструкция по сбросу пароля отправлена на вашу почту!";
+      }
+    }
+
+    function renderCurrentView() {
+      if (navigationState.view === 'courses') {
+        renderCoursesView();
+      } else if (navigationState.view === 'course-detail') {
+        openCourse(navigationState.courseId, false);
       }
     }
 
     async function renderCoursesView() {
+      navigationState = { view: 'courses', courseId: null, lessonId: null };
       const container = document.getElementById('app-content');
       container.innerHTML = `<div class="text-center py-12 text-slate-500"><i class="fa-solid fa-spinner fa-spin text-2xl"></i></div>`;
 
@@ -505,19 +607,19 @@
 
       let html = ``;
 
-      if (userRole !== 'admin' && !userIsActive) {
-        const waText = encodeURIComponent("Саламатсыз ба! Мен платформаға тіркелдім, курсты ашып бересіз бе?");
+      if (userRole !== 'admin') {
+        const waText = encodeURIComponent(currentLang === 'kk' ? "Саламатсыз ба! Мен платформаға тіркелдім, жеке курсқа қолжетімділік алғым келеді." : "Саламатсыз ба! Мен платформаға тіркелдім, курсты ашып бересіз бе?");
         const waUrl = `https://wa.me/77013087711?text=${waText}`;
 
         html += `
-          <div class="mb-8 bg-slate-900 border border-yellow-500/30 rounded-2xl p-5 sm:p-6 shadow-xl flex flex-col md:flex-row items-center justify-between gap-4">
+          <div class="mb-8 custom-card border rounded-2xl p-5 sm:p-6 shadow-xl flex flex-col md:flex-row items-center justify-between gap-4">
             <div class="flex items-start gap-4">
               <div class="w-12 h-12 rounded-full bg-yellow-500/10 border border-yellow-500/30 text-yellow-500 flex items-center justify-center flex-shrink-0 text-xl">
                 <i class="fa-solid fa-clock"></i>
               </div>
               <div>
-                <h3 class="text-base sm:text-lg font-bold text-white mb-1">${i18n[currentLang].noAccessTitle}</h3>
-                <p class="text-xs sm:text-sm text-slate-400 leading-relaxed">${i18n[currentLang].noAccessText}</p>
+                <h3 class="text-base sm:text-lg font-bold mb-1">${i18n[currentLang].noAccessTitle}</h3>
+                <p class="text-xs sm:text-sm custom-sub leading-relaxed">${i18n[currentLang].noAccessText}</p>
               </div>
             </div>
             <a href="${waUrl}" target="_blank" class="inline-flex items-center justify-center gap-2 whitespace-nowrap bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-2.5 px-5 rounded-xl transition shadow-lg shadow-emerald-600/20 text-xs sm:text-sm flex-shrink-0">
@@ -526,26 +628,16 @@
             </a>
           </div>
         `;
-      } else if (userRole !== 'admin' && userIsActive && userAccessExpiresAt) {
-        const expireDate = new Date(userAccessExpiresAt).toLocaleDateString('ru-RU', { year: 'numeric', month: 'long', day: 'numeric' });
-        html += `
-          <div class="mb-6 bg-slate-900 border border-blue-500/30 rounded-2xl p-4 flex items-center justify-between text-xs sm:text-sm">
-            <div class="flex items-center gap-3 text-slate-300">
-              <i class="fa-solid fa-calendar-check text-blue-400 text-lg"></i>
-              <span>Доступ к обучению активен до: <strong class="text-white">${expireDate}</strong></span>
-            </div>
-          </div>
-        `;
       }
 
       html += `
         <div class="flex flex-wrap justify-between items-center gap-3 mb-6 sm:mb-8">
-          <h1 class="text-xl sm:text-2xl font-bold text-white">${userRole === 'admin' ? i18n[currentLang].adminPanel : i18n[currentLang].myCourses}</h1>
+          <h1 class="text-xl sm:text-2xl font-bold">${userRole === 'admin' ? i18n[currentLang].adminPanel : i18n[currentLang].myCourses}</h1>
           
           ${userRole === 'admin' ? `
             <div class="flex items-center gap-2">
               <button onclick="openStudentsModal()" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs sm:text-sm font-semibold px-3 py-2 sm:px-4 sm:py-2.5 rounded-xl transition flex items-center gap-2">
-                <i class="fa-solid fa-users"></i> <span>Ученики</span>
+                <i class="fa-solid fa-users"></i> <span>${i18n[currentLang].studentsBtn}</span>
               </button>
               <button onclick="createCoursePrompt()" class="bg-blue-600 hover:bg-blue-500 text-white text-xs sm:text-sm font-semibold px-3 py-2 sm:px-4 sm:py-2.5 rounded-xl transition flex items-center gap-2">
                 <i class="fa-solid fa-plus"></i> <span>${i18n[currentLang].createCourse}</span>
@@ -568,25 +660,30 @@
           }
 
           const lessonsText = currentLang === 'kk' ? `${lessonsCount} сабақ` : `${lessonsCount} уроков`;
+          const hasAccess = userRole === 'admin' || !!userCourseAccessMap[c.id];
+          const expiresAt = userCourseAccessMap[c.id];
+          const expireDateStr = expiresAt ? new Date(expiresAt).toLocaleDateString() : null;
 
           html += `
-            <div class="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden hover:border-slate-700 transition flex flex-col justify-between p-4 sm:p-5 relative group">
+            <div class="custom-card border rounded-2xl overflow-hidden transition flex flex-col justify-between p-4 sm:p-5 relative group shadow-sm">
               <div>
                 <div class="h-36 bg-slate-800 rounded-xl mb-4 overflow-hidden relative">
                   <img src="${c.cover_url || 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=800'}" class="w-full h-full object-cover">
+                  ${userRole !== 'admin' && !hasAccess ? `<div class="absolute inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center"><i class="fa-solid fa-lock text-white text-xl"></i></div>` : ''}
                 </div>
                 <div class="flex justify-between items-start gap-2 mb-1">
-                  <h3 class="text-base sm:text-lg font-bold text-white">${c.title}</h3>
+                  <h3 class="text-base sm:text-lg font-bold">${c.title}</h3>
                   <span class="text-[11px] bg-slate-800 text-slate-300 px-2 py-0.5 rounded-full font-medium flex-shrink-0 border border-slate-700">
                     <i class="fa-solid fa-play text-[9px] text-blue-400 mr-1"></i> ${lessonsText}
                   </span>
                 </div>
-                <p class="text-xs text-slate-400 mt-1 line-clamp-2">${c.description || ''}</p>
+                <p class="text-xs custom-sub mt-1 line-clamp-2">${c.description || ''}</p>
 
-                ${(userRole !== 'admin' && userIsActive) ? `
+                ${(userRole !== 'admin' && hasAccess) ? `
                   <div class="mt-4">
+                    ${expireDateStr ? `<div class="text-[10px] text-blue-400 mb-2">Доступ активен до: ${expireDateStr}</div>` : ''}
                     <div class="flex justify-between text-[11px] font-semibold mb-1">
-                      <span class="text-slate-400">Прогресс</span>
+                      <span class="custom-sub">${i18n[currentLang].progressText}</span>
                       <span class="text-blue-400">${progressPercent}%</span>
                     </div>
                     <div class="w-full bg-slate-950 h-2 rounded-full overflow-hidden border border-slate-800 mb-3">
@@ -594,7 +691,7 @@
                     </div>
                     ${progressPercent === 100 ? `
                       <button onclick="downloadCertificate('${c.title}')" class="w-full bg-amber-500/10 border border-amber-500/40 text-amber-400 hover:bg-amber-500/20 text-xs font-bold py-2 rounded-xl transition flex items-center justify-center gap-2">
-                        <i class="fa-solid fa-graduation-cap"></i> <span>Скачать Сертификат</span>
+                        <i class="fa-solid fa-graduation-cap"></i> <span>${i18n[currentLang].downloadCert}</span>
                       </button>
                     ` : ''}
                   </div>
@@ -603,14 +700,14 @@
 
               <div class="mt-5 pt-4 border-t border-slate-800/80 flex items-center justify-between">
                 <button onclick="openCourse('${c.id}')" class="text-xs font-semibold text-blue-400 hover:text-blue-300 flex items-center gap-1">
-                  ${(userRole !== 'admin' && !userIsActive) ? 'Посмотреть программу' : 'Смотреть уроки'} <i class="fa-solid fa-chevron-right text-[10px]"></i>
+                  ${(userRole !== 'admin' && !hasAccess) ? i18n[currentLang].viewProgram : i18n[currentLang].watchLessons} <i class="fa-solid fa-chevron-right text-[10px]"></i>
                 </button>
                 ${userRole === 'admin' ? `
                   <div class="flex items-center space-x-2">
-                    <button onclick="editCoursePrompt('${c.id}')" class="text-xs text-slate-400 hover:text-yellow-400 p-1 transition" title="${i18n[currentLang].editCourse}">
+                    <button onclick="editCoursePrompt('${c.id}')" class="text-xs custom-sub hover:text-yellow-400 p-1 transition" title="${i18n[currentLang].editCourse}">
                       <i class="fa-solid fa-pen"></i>
                     </button>
-                    <button onclick="deleteCourse('${c.id}')" class="text-xs text-slate-400 hover:text-red-400 p-1 transition" title="${i18n[currentLang].deleteCourse}">
+                    <button onclick="deleteCourse('${c.id}')" class="text-xs custom-sub hover:text-red-400 p-1 transition" title="${i18n[currentLang].deleteCourse}">
                       <i class="fa-solid fa-trash"></i>
                     </button>
                   </div>
@@ -627,17 +724,20 @@
       container.innerHTML = html;
     }
 
-    async function openCourse(courseId) {
+    async function openCourse(courseId, updateNav = true) {
+      if (updateNav) navigationState = { view: 'course-detail', courseId: courseId, lessonId: null };
       const container = document.getElementById('app-content');
       container.innerHTML = `<div class="text-center py-12 text-slate-500"><i class="fa-solid fa-spinner fa-spin text-2xl"></i></div>`;
 
       const { data: lessons } = await supabaseClient.from('lessons').select('*').eq('course_id', courseId).order('position', { ascending: true });
       currentCourseLessons = lessons || [];
 
+      const hasAccess = userRole === 'admin' || !!userCourseAccessMap[courseId];
+
       if (!lessons || lessons.length === 0) {
         container.innerHTML = `
           <div class="flex justify-between items-center mb-6">
-            <button onclick="renderCoursesView()" class="text-xs sm:text-sm text-slate-400 hover:text-white inline-flex items-center gap-2">${i18n[currentLang].backToCourses}</button>
+            <button onclick="renderCoursesView()" class="text-xs sm:text-sm custom-sub hover:text-white inline-flex items-center gap-2">${i18n[currentLang].backToCourses}</button>
             ${userRole === 'admin' ? `<button onclick="addLessonPrompt('${courseId}')" class="bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold px-3 py-2 rounded-lg flex items-center gap-2"><i class="fa-solid fa-plus"></i> ${i18n[currentLang].addLesson}</button>` : ''}
           </div>
           <div class="text-center py-12 text-slate-500">${i18n[currentLang].noLessons}</div>
@@ -645,7 +745,7 @@
         return;
       }
 
-      if (userRole !== 'admin' && !userIsActive) {
+      if (userRole !== 'admin' && !hasAccess) {
         renderLockedCourseView(courseId, container);
         return;
       }
@@ -654,26 +754,24 @@
     }
 
     function renderLockedCourseView(courseId, container) {
-      const waText = encodeURIComponent("Саламатсыз ба! Мен курс бағдарламасын көрдім, төлем жасап, толық қолжетімділік алғым келеді.");
+      const waText = encodeURIComponent(currentLang === 'kk' ? "Саламатсыз ба! Мен курс бағдарламасын көрдім, төлем жасап, осы курсқа қолжетімділік алғым келеді." : "Саламатсыз ба! Мен курс бағдарламасын көрдім, төлем жасап, толық қолжетімділік алғым келеді.");
       const waUrl = `https://wa.me/77013087711?text=${waText}`;
 
       container.innerHTML = `
         <div class="flex justify-between items-center mb-6">
-          <button onclick="renderCoursesView()" class="text-xs sm:text-sm text-slate-400 hover:text-white inline-flex items-center gap-2">
+          <button onclick="renderCoursesView()" class="text-xs sm:text-sm custom-sub hover:text-white inline-flex items-center gap-2">
             ${i18n[currentLang].backToCourses}
           </button>
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
           <div class="lg:col-span-2 space-y-6">
-            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-8 text-center space-y-4 shadow-2xl">
+            <div class="custom-card border rounded-2xl p-8 text-center space-y-4 shadow-2xl">
               <div class="w-16 h-16 rounded-full bg-blue-600/10 border border-blue-500/30 text-blue-400 flex items-center justify-center mx-auto text-2xl">
                 <i class="fa-solid fa-lock"></i>
               </div>
-              <h2 class="text-xl font-bold text-white">Видеоуроки заблокированы</h2>
-              <p class="text-xs sm:text-sm text-slate-400 max-w-md mx-auto leading-relaxed">
-                Вы можете ознакомиться со списком уроков справа. Чтобы получить доступ к просмотру видео и скачиванию материалов, обратитесь к администратору.
-              </p>
+              <h2 class="text-xl font-bold">${i18n[currentLang].videosLocked}</h2>
+              <p class="text-xs sm:text-sm custom-sub max-w-md mx-auto leading-relaxed">${i18n[currentLang].lockedDesc}</p>
               <a href="${waUrl}" target="_blank" class="inline-flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-3 px-6 rounded-xl transition shadow-lg shadow-emerald-600/20 text-sm">
                 <i class="fa-brands fa-whatsapp text-lg"></i>
                 <span>${i18n[currentLang].whatsappBtn}</span>
@@ -681,13 +779,13 @@
             </div>
           </div>
 
-          <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 h-fit">
-            <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4 px-2">Программа курса (уроков: ${currentCourseLessons.length})</h3>
+          <div class="custom-card border rounded-2xl p-4 h-fit">
+            <h3 class="text-xs font-bold custom-sub uppercase tracking-wider mb-4 px-2">${i18n[currentLang].lessonsTitle} (${currentCourseLessons.length})</h3>
             <div class="space-y-2">
               ${currentCourseLessons.map((l, idx) => `
-                <div class="p-3 rounded-xl bg-slate-950 border border-slate-800/60 flex items-center gap-2.5">
-                  <i class="fa-solid fa-lock text-slate-600 text-xs flex-shrink-0"></i>
-                  <span class="text-xs sm:text-sm font-medium text-slate-300 truncate">${idx + 1}. ${l.title}</span>
+                <div class="p-3 rounded-xl custom-input border flex items-center gap-2.5">
+                  <i class="fa-solid fa-lock text-slate-500 text-xs flex-shrink-0"></i>
+                  <span class="text-xs sm:text-sm font-medium truncate">${idx + 1}. ${l.title}</span>
                 </div>
               `).join('')}
             </div>
@@ -709,7 +807,7 @@
 
       let html = `
         <div class="flex justify-between items-center mb-6">
-          <button onclick="renderCoursesView()" class="text-xs sm:text-sm text-slate-400 hover:text-white inline-flex items-center gap-2">
+          <button onclick="renderCoursesView()" class="text-xs sm:text-sm custom-sub hover:text-white inline-flex items-center gap-2">
             ${i18n[currentLang].backToCourses}
           </button>
           ${userRole === 'admin' ? `
@@ -730,36 +828,35 @@
                 `<video src="${activeLesson.video_url}" controls class="w-full h-full"></video>`}
             </div>
 
-            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-4">
+            <div class="custom-card border rounded-2xl p-5 space-y-4">
               <div class="flex flex-wrap items-center justify-between gap-3">
-                <h2 class="text-lg sm:text-xl font-bold text-white">${activeLesson.title}</h2>
+                <h2 class="text-lg sm:text-xl font-bold">${activeLesson.title}</h2>
                 
-                <!-- Кнопка «Отметить как пройденный» скрыта для администратора -->
                 ${userRole !== 'admin' ? `
                   <button onclick="toggleLessonProgress('${activeLesson.id}', '${courseId}')" class="px-3.5 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 transition ${isCompleted ? 'bg-green-600/20 text-green-400 border border-green-500/40' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}">
                     <i class="fa-solid ${isCompleted ? 'fa-circle-check text-green-400' : 'fa-circle'}"></i>
-                    <span>${isCompleted ? 'Урок пройден' : 'Отметить как пройденный'}</span>
+                    <span>${isCompleted ? i18n[currentLang].lessonCompleted : i18n[currentLang].markCompleted}</span>
                   </button>
                 ` : ''}
               </div>
-              <p class="text-xs sm:text-sm text-slate-400 leading-relaxed">${activeLesson.description || ''}</p>
+              <p class="text-xs sm:text-sm custom-sub leading-relaxed">${activeLesson.description || ''}</p>
             </div>
 
             ${attachmentsList.length > 0 ? `
-              <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5">
-                <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-2">
-                  <i class="fa-solid fa-file-arrow-down text-blue-400"></i> Материалы к уроку
+              <div class="custom-card border rounded-2xl p-5">
+                <h3 class="text-xs font-bold custom-sub uppercase tracking-wider mb-3 flex items-center gap-2">
+                  <i class="fa-solid fa-file-arrow-down text-blue-400"></i> ${i18n[currentLang].materialsTitle}
                 </h3>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   ${attachmentsList.map(file => `
-                    <a href="${file.url}" target="_blank" class="p-3 bg-slate-950 border border-slate-800 hover:border-blue-500/50 rounded-xl flex items-center gap-3 transition group">
+                    <a href="${file.url}" target="_blank" class="p-3 custom-input border hover:border-blue-500/50 rounded-xl flex items-center gap-3 transition group">
                       <div class="w-8 h-8 rounded-lg bg-blue-600/20 text-blue-400 flex items-center justify-center font-bold text-xs flex-shrink-0">
                         <i class="fa-solid fa-file"></i>
                       </div>
                       <div class="min-w-0 flex-grow">
-                        <div class="text-xs font-semibold text-slate-200 group-hover:text-blue-400 truncate">${file.name || 'Скачать файл'}</div>
+                        <div class="text-xs font-semibold truncate">${file.name || i18n[currentLang].downloadFile}</div>
                       </div>
-                      <i class="fa-solid fa-download text-xs text-slate-500 group-hover:text-blue-400"></i>
+                      <i class="fa-solid fa-download text-xs custom-sub"></i>
                     </a>
                   `).join('')}
                 </div>
@@ -767,23 +864,23 @@
             ` : ''}
           </div>
 
-          <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 h-fit">
-            <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4 px-2">Список уроков</h3>
+          <div class="custom-card border rounded-2xl p-4 h-fit">
+            <h3 class="text-xs font-bold custom-sub uppercase tracking-wider mb-4 px-2">${i18n[currentLang].lessonsTitle}</h3>
             <div class="space-y-2">
               ${currentCourseLessons.map((l, idx) => {
                 const lCompleted = !!userProgressMap[l.id];
                 return `
-                  <div class="p-3 rounded-xl bg-slate-950 border border-slate-800/60 hover:border-blue-500/50 transition flex items-center justify-between group">
+                  <div class="p-3 rounded-xl custom-input border hover:border-blue-500/50 transition flex items-center justify-between group">
                     <div class="cursor-pointer flex items-center gap-2.5 flex-grow mr-2 min-w-0" onclick="switchActiveLesson('${l.id}', '${courseId}')">
-                      <i class="fa-solid ${lCompleted ? 'fa-circle-check text-green-400 text-sm' : 'fa-circle text-slate-700 text-xs'} flex-shrink-0"></i>
-                      <span class="text-xs sm:text-sm font-medium ${lCompleted ? 'text-slate-400 line-through' : 'text-slate-200'} truncate">${idx + 1}. ${l.title}</span>
+                      <i class="fa-solid ${lCompleted ? 'fa-circle-check text-green-400 text-sm' : 'fa-circle text-slate-500 text-xs'} flex-shrink-0"></i>
+                      <span class="text-xs sm:text-sm font-medium ${lCompleted ? 'custom-sub line-through' : ''} truncate">${idx + 1}. ${l.title}</span>
                     </div>
                     <div class="flex items-center space-x-1.5 flex-shrink-0">
                       ${userRole === 'admin' ? `
-                        <button onclick="editLessonPrompt('${l.id}', '${courseId}')" class="text-slate-400 hover:text-yellow-400 p-1" title="Редактировать">
+                        <button onclick="editLessonPrompt('${l.id}', '${courseId}')" class="custom-sub hover:text-yellow-400 p-1" title="Редактировать">
                           <i class="fa-solid fa-pen text-xs"></i>
                         </button>
-                        <button onclick="deleteLesson('${l.id}', '${courseId}')" class="text-slate-400 hover:text-red-400 p-1" title="Удалить">
+                        <button onclick="deleteLesson('${l.id}', '${courseId}')" class="custom-sub hover:text-red-400 p-1" title="Удалить">
                           <i class="fa-solid fa-trash text-xs"></i>
                         </button>
                       ` : ''}
@@ -827,7 +924,7 @@
       canvas.height = 800;
       const ctx = canvas.getContext('2d');
 
-      ctx.fillStyle = '#0f172a';
+      ctx.fillStyle = currentTheme === 'light' ? '#ffffff' : '#0f172a';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
       ctx.strokeStyle = '#f59e0b';
@@ -841,29 +938,29 @@
       ctx.fillStyle = '#f59e0b';
       ctx.font = 'bold 36px Inter, sans-serif';
       ctx.textAlign = 'center';
-      ctx.fillText('СЕРТИФИКАТ ОБ ОКОНЧАНИИ', canvas.width / 2, 160);
+      ctx.fillText(currentLang === 'kk' ? 'АЯҚТАУ СЕРТИФИКАТЫ' : 'СЕРТИФИКАТ ОБ ОКОНЧАНИИ', canvas.width / 2, 160);
 
-      ctx.fillStyle = '#94a3b8';
+      ctx.fillStyle = '#64748b';
       ctx.font = '20px Inter, sans-serif';
-      ctx.fillText('Настоящий сертификат подтверждает, что', canvas.width / 2, 230);
+      ctx.fillText(currentLang === 'kk' ? 'Бұл сертификат төмендегі тұлғаның:' : 'Настоящий сертификат подтверждает, что', canvas.width / 2, 230);
 
-      ctx.fillStyle = '#ffffff';
+      ctx.fillStyle = currentTheme === 'light' ? '#0f172a' : '#ffffff';
       ctx.font = 'bold 48px Inter, sans-serif';
       ctx.fillText(userFullName.toUpperCase(), canvas.width / 2, 320);
 
-      ctx.fillStyle = '#94a3b8';
+      ctx.fillStyle = '#64748b';
       ctx.font = '20px Inter, sans-serif';
-      ctx.fillText('успешно завершил(а) обучение по курсу:', canvas.width / 2, 400);
+      ctx.fillText(currentLang === 'kk' ? 'курс бойынша оқуды сәтті аяқтағанын растайды:' : 'успешно завершил(а) обучение по курсу:', canvas.width / 2, 400);
 
-      ctx.fillStyle = '#60a5fa';
+      ctx.fillStyle = '#3b82f6';
       ctx.font = 'bold 36px Inter, sans-serif';
       ctx.fillText(`«${courseTitle}»`, canvas.width / 2, 480);
 
-      const today = new Date().toLocaleDateString('ru-RU');
+      const today = new Date().toLocaleDateString(currentLang === 'kk' ? 'kk-KZ' : 'ru-RU');
       ctx.fillStyle = '#64748b';
       ctx.font = '18px Inter, sans-serif';
-      ctx.fillText(`Дата выдачи: ${today}`, 250, 680);
-      ctx.fillText('Платформа: Ахметтен пайдалы ақпарат', canvas.width - 300, 680);
+      ctx.fillText(`${i18n[currentLang].issuedDate}: ${today}`, 250, 680);
+      ctx.fillText(i18n[currentLang].platformName, canvas.width - 320, 680);
 
       const link = document.createElement('a');
       link.download = `Certificate_${userFullName}.png`;
@@ -936,42 +1033,58 @@
       renderFilteredStudents(filtered);
     }
 
-    function renderFilteredStudents(students) {
+    async function renderFilteredStudents(students) {
       const list = document.getElementById('students-list-container');
       if (!students || students.length === 0) {
         list.innerHTML = `<div class="text-center py-6 text-slate-500">Ученики не найдены.</div>`;
         return;
       }
 
-      list.innerHTML = students.map(s => `
-        <div class="p-3 bg-slate-950 border border-slate-800 rounded-xl flex items-center justify-between gap-2">
-          <div class="min-w-0">
-            <div class="text-sm font-bold text-white truncate">${s.full_name || 'Без имени'}</div>
-            <div class="text-xs text-slate-400 truncate">${s.email || ''}</div>
-            ${s.access_expires_at ? `<div class="text-[10px] text-blue-400 mt-0.5">Доступ до: ${new Date(s.access_expires_at).toLocaleDateString()}</div>` : ''}
+      const { data: courses } = await supabaseClient.from('courses').select('id, title');
+      const { data: allAccess } = await supabaseClient.from('course_access').select('*');
+
+      list.innerHTML = students.map(s => {
+        const studentAccesses = allAccess ? allAccess.filter(a => a.user_id === s.id) : [];
+        
+        return `
+          <div class="p-4 custom-input border rounded-xl space-y-3">
+            <div>
+              <div class="text-sm font-bold">${s.full_name || 'Без имени'}</div>
+              <div class="text-xs custom-sub">${s.email || ''}</div>
+            </div>
+            
+            <div class="pt-2 border-t border-slate-700/50">
+              <div class="text-xs font-semibold mb-2">Доступ к курсам:</div>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                ${courses && courses.length > 0 ? courses.map(c => {
+                  const access = studentAccesses.find(a => a.course_id === c.id);
+                  const isActive = access && (!access.expires_at || new Date(access.expires_at) > new Date());
+                  const expireStr = (access && access.expires_at) ? ` до ${new Date(access.expires_at).toLocaleDateString()}` : (isActive ? ' (Бессрочно)' : '');
+                  
+                  return `
+                    <div class="flex items-center justify-between custom-card px-3 py-2 rounded-lg border text-xs">
+                      <span class="truncate mr-2 font-medium" title="${c.title}">${c.title}</span>
+                      <div class="flex items-center gap-2 flex-shrink-0">
+                        <span class="${isActive ? 'text-green-400' : 'text-slate-500'} font-semibold">${isActive ? 'Активен' + expireStr : 'Закрыт'}</span>
+                        <button onclick="toggleCourseAccess('${s.id}', '${c.id}', ${isActive})" class="px-2 py-1 rounded text-[11px] font-bold ${isActive ? 'bg-red-600/20 text-red-400 hover:bg-red-600/30' : 'bg-green-600 text-white hover:bg-green-500'}">
+                          ${isActive ? 'Закрыть' : 'Открыть'}
+                        </button>
+                      </div>
+                    </div>
+                  `;
+                }).join('') : '<div class="text-xs text-slate-500">Нет доступных курсов</div>'}
+              </div>
+            </div>
           </div>
-          <div class="flex items-center space-x-2 flex-shrink-0">
-            <span class="text-[10px] px-2 py-0.5 rounded-full font-bold uppercase ${s.is_active ? 'bg-green-900/40 text-green-400 border border-green-500/30' : 'bg-red-900/40 text-red-400 border border-red-500/30'}">
-              ${s.is_active ? 'Активен' : 'Заблокирован'}
-            </span>
-            <button onclick="promptStudentAccess('${s.id}', ${s.is_active})" class="text-xs px-3 py-1.5 rounded-lg font-semibold transition ${s.is_active ? 'bg-red-600/20 text-red-400 hover:bg-red-600/30' : 'bg-green-600 text-white hover:bg-green-500'}">
-              ${s.is_active ? 'Закрыть' : 'Открыть доступ'}
-            </button>
-          </div>
-        </div>
-      `).join('');
+        `;
+      }).join('');
     }
 
-    function closeStudentsModal() { document.getElementById('students-modal').classList.add('hidden'); }
-
-    async function promptStudentAccess(studentId, currentStatus) {
-      if (currentStatus) {
-        if (confirm("Закрыть доступ для этого ученика?")) {
-          await supabaseClient.from('profiles').update({ is_active: false, access_expires_at: null }).eq('id', studentId);
-          openStudentsModal();
-        }
+    async function toggleCourseAccess(studentId, courseId, currentActive) {
+      if (currentActive) {
+        await supabaseClient.from('course_access').delete().match({ user_id: studentId, course_id: courseId });
       } else {
-        const choice = prompt("Выберите срок доступа:\n1 - 1 месяц\n3 - 3 месяца\n6 - 6 месяцев\n12 - 12 месяцев\n0 или пусто - Без ограничений", "6");
+        const choice = prompt("Выберите срок доступа к этому курсу:\n1 - 1 месяц\n3 - 3 месяца\n6 - 6 месяцев\n12 - 12 месяцев\n0 или пусто - Без ограничений", "6");
         if (choice === null) return;
 
         let months = parseInt(choice);
@@ -983,10 +1096,16 @@
           expiresAt = date.toISOString();
         }
 
-        await supabaseClient.from('profiles').update({ is_active: true, access_expires_at: expiresAt }).eq('id', studentId);
-        openStudentsModal();
+        await supabaseClient.from('course_access').upsert({
+          user_id: studentId,
+          course_id: courseId,
+          expires_at: expiresAt
+        }, { onConflict: 'user_id,course_id' });
       }
+      openStudentsModal();
     }
+
+    function closeStudentsModal() { document.getElementById('students-modal').classList.add('hidden'); }
 
     async function addLessonPrompt(courseId) {
       const title = prompt("Название урока:");
@@ -995,13 +1114,13 @@
       if (!video_url) return;
       const description = prompt("Описание урока:");
       
-      const file_name = prompt("Название скачиваемого файла (необязательно):");
-      const file_url = file_name ? prompt("Ссылка на скачиваемый файл (Google Drive / PDF / Excel):") : null;
+      const file_name = prompt("Название скачиваемого файла (необязательно, например: Инструкция.pdf):");
+      const file_url = file_name ? prompt("Ссылка на файл (Google Drive / прямая ссылка):") : null;
       
       const attachments = (file_name && file_url) ? [{ name: file_name, url: file_url }] : [];
 
       await supabaseClient.from('lessons').insert([{ course_id: courseId, title, video_url, description, attachments }]);
-      openCourse(courseId);
+      openCourse(courseId, false);
     }
 
     async function editLessonPrompt(lessonId, courseId) {
@@ -1021,13 +1140,13 @@
       const attachments = (file_name && file_url) ? [{ name: file_name, url: file_url }] : [];
 
       await supabaseClient.from('lessons').update({ title, video_url, description, attachments }).eq('id', lessonId);
-      openCourse(courseId);
+      openCourse(courseId, false);
     }
 
     async function deleteLesson(lessonId, courseId) {
       if (confirm("Удалить этот урок?")) {
         await supabaseClient.from('lessons').delete().eq('id', lessonId);
-        openCourse(courseId);
+        openCourse(courseId, false);
       }
     }
 
@@ -1071,7 +1190,7 @@
       initSupabase();
     }
 
-    function handleLogoClick() {
+    function goHome() {
       if (currentUser) renderCoursesView(); else renderAuthView();
     }
 
@@ -1082,6 +1201,7 @@
       renderAuthView();
     }
 
+    initTheme();
     updateLanguageUI();
     renderAuthView();
     initSupabase();

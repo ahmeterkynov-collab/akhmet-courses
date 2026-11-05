@@ -23,7 +23,7 @@
       -ms-user-select: none;
       user-select: none;
     }
-    /* Жесткое скрытие любых элементов и виджетов Netlify в углах экрана */
+    /* Жесткое скрытие через CSS плашки Netlify */
     iframe[src*="netlify"], 
     iframe[id*="netlify"], 
     div[style*="z-index: 2147483647"],
@@ -32,6 +32,8 @@
       visibility: hidden !important;
       opacity: 0 !important;
       pointer-events: none !important;
+      width: 0 !important;
+      height: 0 !important;
     }
   </style>
 </head>
@@ -157,6 +159,20 @@
       </div>
     </div>
   </div>
+
+  <!-- Скрипт автоматического удаления плашки Netlify -->
+  <script>
+    setInterval(() => {
+      document.querySelectorAll('iframe, div, a').forEach(el => {
+        const src = el.src || '';
+        const href = el.href || '';
+        const html = el.innerHTML || '';
+        if (src.includes('netlify') || href.includes('netlify') || html.includes('Powered by Netlify')) {
+          el.remove();
+        }
+      });
+    }, 500);
+  </script>
 
   <script>
     const DEFAULT_SUPABASE_URL = 'https://qnjddzjvjfoogubmzynn.supabase.co';
